@@ -1,0 +1,337 @@
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>新建项目</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      background-color: white;
+      color: black;
+      padding: 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 50px;
+    }
+
+    .menu {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      gap: 20px;
+    }
+
+    .menu ul li {
+      font-size: 18px;
+    }
+
+    .menu ul li a {
+      text-decoration: none;
+      color: black;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    
+    .menu ul li a.active {
+      background-color: #0073e6;
+      color: white;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .profile img {
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 120px;
+    }
+
+    .page {
+      display: none;
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 0 20px;
+      font-size: 16px;
+      line-height: 1.2;
+      color: #000;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 32px;
+      margin: 50px 0;
+    }
+
+    .contributor-guidelines h2 {
+        font-size: 22px;
+        margin-top: 40px;
+        font-weight: bold;
+    }
+
+    .contributor-guidelines ol {
+        padding-left: 40px;
+    }
+
+    .contributor-guidelines li {
+        margin-bottom: 10px;
+        padding-left: 5px;
+    }
+
+    .project-form input[type="text"],
+    .project-form label {
+        display: block;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+    }
+    .project-form textarea {
+        width: 100%;
+        max-width: 800px;
+        padding: 4px;
+        box-sizing: border-box;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    .form-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+    }
+
+    .left-buttons,
+        .right-buttons {
+        display: flex;
+        gap: 16px;
+    }
+
+    .page-nav {
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        display: none;
+        justify-content: space-between;
+        padding: 0 40px;
+    }
+
+    .page-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: none;
+      justify-content: space-between;
+      padding: 0 40px;
+    }
+    
+    .nav-button {
+      padding: 10px 20px;
+      background-color: #0073e6;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .nav-button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="https://ckc.eduhk.hk/ckcstrokes/media/EdUHK_logo.png" alt="香港教育大学 Logo">
+    </div>
+
+    <div class="menu">
+        <nav>
+        <ul>
+            <li><a href="">首页</a></li>
+            <li><a href="projects.html" class="active">词汇</a></li>
+            <li><a href="">贡献者</a></li>
+        </ul>
+        </nav>
+    </div>
+
+    <div class="profile">
+      <img src="https://www.freeiconspng.com/uploads/am-a-19-year-old-multimedia-artist-student-from-manila--21.png" alt="头像">
+    </div>
+  </header>
+
+  <div class="page active" id="info">
+    <div class="page-title">新建项目</div>
+
+    <div class="contributor-guidelines">
+      <h2>贡献者要求：</h2>
+      <ol>
+        <li>具有目标语言词表，涵盖至少3个方言</li>
+        <li>每个方言要求2000词以上</li>
+        <li>谱系树</li>
+      </ol>
+
+      <h2>注意事项：</h2>
+      <ol>
+        <li>什么是自带时间信息的词：XX、XX、XX……</li>
+        <li>什么词汇不适合用作证据：XX、XX、XX……</li>
+        <li>用于断代的时间参考有哪些：XX、XX、XX……</li>
+        <li>时间的上限和下限的确定：XX……</li>
+        <li>需将词汇分为不同的历史层次：早期、中期、后期</li>
+        <li>不要使用具有多义的固有词</li>
+      </ol>
+    </div>
+
+    <div class="project-form">
+        <form id="projectForm">
+          <label>项目ID：<input type="text" name="projectId" id="projectId"></label><br><br>
+          <label>项目名称：<input type="text" name="projectName" id="projectName"></label><br><br>
+          <label>项目简介：<br><textarea name="projectDesc" id="projectDesc" rows="4" cols="50"></textarea></label><br><br>
+      
+          <label>项目类型：</label><br>
+          <label><input type="radio" name="projectType" value="1"> 目标语言与其他语言的分化时间</label><br>
+          <label><input type="radio" name="projectType" value="2"> 多个目标语言的分化时间</label><br>
+          <label><input type="radio" name="projectType" value="3"> 目标语言的不同方言的分化时间</label><br><br>
+      
+          <label>语言列表：<button type="button">添加语言</button></label><br><br>
+          <label>谱系树：<button type="button">上传谱系树文件</button> <button type="button">查看</button></label><br><br>
+          <label>参考文献：<input type="text" name="references" id="references"></label><br><br>
+      
+          <div class="form-buttons">
+            <div class="left-buttons">
+                <button type="button" class="nav-button" onclick="saveDraft()">保存草稿</button>
+                <button type="button" class="nav-button" onclick="clearDraft()">清除草稿</button>
+            </div>
+            <div class="right-buttons">
+                <button type="button" class="nav-button" onclick="enterProject()">填写词汇</button>
+            </div>
+          </div>
+        </form>
+      </div>
+  </div>
+
+  <div class="page" id="page1"><div class="page-title">第一页内容占位</div></div>
+  <div class="page" id="page2"><div class="page-title">第二页内容占位</div></div>
+  <div class="page" id="page3"><div class="page-title">第三页内容占位</div></div>
+  <div class="page" id="page4"><div class="page-title">第四页内容占位</div></div>
+  <div class="page" id="page5"><div class="page-title">第五页内容占位</div></div>
+
+  <div class="page-nav">
+    <button class="nav-button" id="prevBtn" disabled>上一页</button>
+    <button class="nav-button" id="nextBtn">下一页</button>
+  </div>
+
+</body>
+
+<script>
+    let currentPage = 1;
+    const totalPages = 5;
+
+    function enterProject() {
+        document.getElementById("info").classList.remove("active");
+        document.querySelector(".form-buttons").style.display = "none";
+        currentPage = 1;
+        showPage(currentPage);
+        document.querySelector(".page-nav").style.display = "flex";
+    }
+
+    function showPage(pageNum) {
+        for (let i = 1; i <= totalPages; i++) {
+            document.getElementById('page' + i).classList.remove('active');
+        }
+
+        if (pageNum === 0) {
+            document.getElementById("info").classList.add("active");
+            document.querySelector(".form-buttons").style.display = "flex";
+            document.querySelector(".page-nav").style.display = "none";
+            return;
+        }
+
+        document.getElementById('page' + pageNum).classList.add('active');
+        document.getElementById('prevBtn').disabled = false;
+        document.getElementById('nextBtn').disabled = (pageNum === totalPages);
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+      } else if (currentPage === 1) {
+        currentPage = 0;
+        showPage(currentPage);
+      }
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        showPage(currentPage);
+      }
+    });
+
+    function saveDraft() {
+        const draft = {
+            projectId: document.getElementById("projectId").value,
+            projectName: document.getElementById("projectName").value,
+            projectDesc: document.getElementById("projectDesc").value,
+            references: document.getElementById("references").value,
+            projectType: document.querySelector('input[name="projectType"]:checked')?.value || null
+        };
+        localStorage.setItem("projectDraft", JSON.stringify(draft));
+        alert("草稿已保存！");
+    }
+
+    function loadDraft() {
+        const saved = localStorage.getItem("projectDraft");
+        if (!saved) return;
+        const draft = JSON.parse(saved);
+        document.getElementById("projectId").value = draft.projectId || "";
+        document.getElementById("projectName").value = draft.projectName || "";
+        document.getElementById("projectDesc").value = draft.projectDesc || "";
+        document.getElementById("references").value = draft.references || "";
+        if (draft.projectType) {
+            const radio = document.querySelector(`input[name="projectType"][value="${draft.projectType}"]`);
+            if (radio) radio.checked = true;
+        }
+    }
+
+    function clearDraft() {
+        localStorage.removeItem("projectDraft");
+        alert("草稿已清除！");
+    }
+
+    document.addEventListener("DOMContentLoaded", loadDraft);
+</script>
+
+</html>

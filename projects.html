@@ -1,0 +1,254 @@
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>词汇</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      background-color: white;
+      color: black;
+      padding: 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 50px;
+    }
+
+    .menu {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      gap: 20px;
+    }
+
+    .menu ul li {
+      font-size: 18px;
+    }
+
+    .menu ul li a {
+      text-decoration: none;
+      color: black;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    
+    .menu ul li a.active {
+      background-color: #0073e6;
+      color: white;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .profile img {
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 120px;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .login-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      z-index: 1000;
+      width: 300px;
+      text-align: center;
+    }
+
+    .login-popup h2 {
+      margin: 0 0 10px;
+    }
+
+    .login-popup button {
+      background-color: #0073e6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .login-popup .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .login-popup input {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .close-icon {
+      width: 25px;
+      height: 25px;
+    }
+
+    .welcome-container {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 24px;
+    }
+
+    #map-placeholder {
+      width: 90%;
+      height: 300px;
+      background-color: #e0e0e0;
+      margin: 40px auto;
+    }
+
+    .project-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin-bottom: 40px;
+    }
+
+    .project-button {
+      padding: 20px 40px;
+      font-size: 20px;
+      border: 1px solid #ccc;
+      background-color: white;
+      cursor: pointer;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .project-button:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .project-description {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto 60px;
+      font-size: 16px;
+      line-height: 1.8;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="https://ckc.eduhk.hk/ckcstrokes/media/EdUHK_logo.png" alt="香港教育大学 Logo">
+    </div>
+
+    <div class="menu">
+      <nav>
+        <ul>
+          <li><a href="">首页</a></li>
+          <li><a href="projects.html" class="active">词汇</a></li>
+          <li><a href="">贡献者</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="profile" onclick="showLoginPopup()">
+      <img src="https://www.freeiconspng.com/uploads/am-a-19-year-old-multimedia-artist-student-from-manila--21.png" alt="头像">
+    </div>
+  </header>
+
+  <div class="overlay"></div>
+
+  <div class="login-popup">
+    <button class="close-btn" onclick="closePopup()">
+      <img src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-close-512.png" alt="关闭" class="close-icon">
+    </button>
+    <h2>登陆账号</h2>
+    <input type="email" placeholder="邮箱" />
+    <input type="password" placeholder="密码" />
+    <button onclick="submitLogin()">登录</button>
+  </div>
+
+  <div id="map-placeholder"></div>
+
+  <div class="welcome-container">
+    <h1>欢迎，<span id="username">教授</span></h1>
+  </div>
+
+  <div class="project-buttons">
+    <button class="project-button" onclick="window.location.href='modify_project.html'">新建项目</button>
+    <button class="project-button">继续项目</button>
+  </div>
+
+  <div class="project-description">
+    我们致力于通过收集自带时间信息的词汇数据，通过历史比较的方法，推断汉藏语言或者方言的分化时间，并追踪可能的人类迁移路径，建立开放共享的词汇数据库，开展语言演化研究。
+  </div>
+</body>
+
+<script>
+  function showLoginPopup() {
+    document.querySelector('.overlay').style.display = 'block';
+    document.querySelector('.login-popup').style.display = 'block';
+  }
+
+  function closePopup() {
+    document.querySelector('.overlay').style.display = 'none';
+    document.querySelector('.login-popup').style.display = 'none';
+  }
+
+  function submitLogin() {
+    alert('登录成功！');
+    closePopup();
+  }
+
+  const userName = "梁教授";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const userNameSpan = document.getElementById("username");
+    if (userNameSpan) {
+      userNameSpan.textContent = userName;
+    }
+  });
+</script>
+
+</html>

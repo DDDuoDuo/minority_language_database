@@ -1,0 +1,381 @@
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>词汇</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      background-color: white;
+      color: black;
+      padding: 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 50px;
+    }
+
+    .menu {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      gap: 20px;
+    }
+
+    .menu ul li {
+      font-size: 18px;
+    }
+
+    .menu ul li a {
+      text-decoration: none;
+      color: black;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    
+    .menu ul li a.active {
+      background-color: #0073e6;
+      color: white;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+    }
+    
+    .profile img {
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 120px;
+      cursor: pointer;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .login-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      z-index: 1000;
+      width: 300px;
+      text-align: center;
+    }
+
+    .login-popup h2 {
+      margin: 0 0 10px;
+    }
+
+    .login-popup button {
+      background-color: #0073e6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .login-popup .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .login-popup input {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .close-icon {
+      width: 25px;
+      height: 25px;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 70px;
+        right: 190px;
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        width: 140px;
+        z-index: 9999;
+        overflow: hidden;
+    }
+
+    .dropdown-menu a {
+        display: block;
+        padding: 10px 16px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .dropdown-menu a:hover {
+        background-color: #f0f0f0;
+    }
+
+    .dropdown-menu button.dropdown-link {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .dropdown-menu button.dropdown-link:hover {
+        background-color: #f0f0f0;
+    }
+
+    .map-title {
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 40px;
+        color: #333;
+    }
+
+    #map-placeholder {
+      width: 85%;
+      height: 500px;
+      background-color: #e0e0e0;
+      margin: 40px auto;
+    }
+
+    .project-list-title {
+        max-width: 1200px;
+        margin: 40px auto 10px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #222;
+    }
+
+    .project-list-container {
+        max-width: 1200px;
+        margin: 0 auto 60px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        overflow-x: auto;
+    }
+
+    .project-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .project-table th,
+    .project-table td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .project-table th {
+        background-color: #eee;
+        font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="img/EdUHK_logo.png" alt="香港教育大学 Logo">
+    </div>
+
+    <div class="menu">
+      <nav>
+        <ul>
+          <li><a href="#">首页</a></li>
+          <li><a href="language_map.html" class="active">词汇</a></li>
+          <li><a href="#">贡献者</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="profile" id="profile">
+        <img id="profileImg" src="img/profileImg.png" alt="头像">
+    </div>
+
+    <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
+        <a href="#">我的账户</a>
+        <a href="projects.html">管理项目</a>
+        <button class="dropdown-link" id="logoutBtn">退出登录</button>
+    </div>
+  </header>
+
+  <div class="overlay"></div>
+
+  <div class="login-popup">
+    <button class="close-btn" onclick="closePopup()">
+      <img src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-close-512.png" alt="关闭" class="close-icon">
+    </button>
+    <h2>登陆账号</h2>
+    <input type="email" placeholder="邮箱" />
+    <input type="password" placeholder="密码" />
+    <button onclick="submitLogin()">登录</button>
+  </div>
+
+  <div class="map-title">中国少数民族语言分布地图</div>
+  
+  <div id="map-placeholder"></div>
+
+  <div class="project-list-title">语言项目列表</div>  
+
+  <div class="project-list-container">
+    <table class="project-table">
+      <thead>
+        <tr>
+          <th>项目名称</th>
+          <th>词汇数量</th>
+          <th>研究结果</th>
+          <th>地域</th>
+          <th>作者</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="project-table-body"></tbody>
+    </table>
+  </div>
+</body>
+
+<script>
+  function showLoginPopup() {
+    document.querySelector('.overlay').style.display = 'block';
+    document.querySelector('.login-popup').style.display = 'block';
+  }
+
+  function closePopup() {
+    document.querySelector('.overlay').style.display = 'none';
+    document.querySelector('.login-popup').style.display = 'none';
+  }
+
+  function submitLogin() {
+    const email = document.querySelector('input[type="email"]').value.trim();
+    const password = document.querySelector('input[type="password"]').value.trim();
+
+    if (!email || !password) {
+        alert("请输入账户或密码！");
+        return;
+    }
+
+    localStorage.setItem("isLoggedIn", "true");
+
+    closePopup();
+
+    setupProfileMenu();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    function setupProfileMenu() {
+        const profileImg = document.getElementById("profileImg");
+        const dropdown = document.getElementById("dropdownMenu");
+
+        if (!profileImg || !dropdown) return;
+
+        profileImg.onclick = () => {
+            if (localStorage.getItem("isLoggedIn") === "true") {
+            dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
+            } else {
+            showLoginPopup();
+            }
+        };
+
+        document.addEventListener("click", (e) => {
+            if (!profileImg.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
+            }
+        });
+    }
+
+    setupProfileMenu();
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("isLoggedIn");
+        alert("已退出登录");
+        location.reload();
+        });
+    }
+
+    const tableBody = document.getElementById("project-table-body");
+
+    // 示例项目数据
+    const exampleProject = {
+        name: "哈萨克语-新疆项目",
+        wordCount: 2100,
+        result: "初步时间分化建模完成",
+        region: "新疆",
+        author: "张三",
+        createdAt: "2025-07-21",
+        action: "<a href='#'>查看</a>"
+    };
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td>${exampleProject.name}</td>
+        <td>${exampleProject.wordCount}</td>
+        <td>${exampleProject.result}</td>
+        <td>${exampleProject.region}</td>
+        <td>${exampleProject.author}</td>
+        <td>${exampleProject.createdAt}</td>
+        <td>${exampleProject.action}</td>
+    `;
+    tableBody.appendChild(tr);
+
+    setupProfileMenu();
+ });
+</script>
+
+</html>

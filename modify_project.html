@@ -297,15 +297,18 @@
     });
 
     function saveDraft() {
-        const draft = {
-            projectId: document.getElementById("projectId").value,
-            projectName: document.getElementById("projectName").value,
-            projectDesc: document.getElementById("projectDesc").value,
-            references: document.getElementById("references").value,
-            projectType: document.querySelector('input[name="projectType"]:checked')?.value || null
-        };
-        localStorage.setItem("projectDraft", JSON.stringify(draft));
-        alert("草稿已保存！");
+      const draft = {
+        projectId: document.getElementById("projectId").value,
+        projectName: document.getElementById("projectName").value,
+        projectDesc: document.getElementById("projectDesc").value,
+        references: document.getElementById("references").value,
+        projectType: document.querySelector('input[name="projectType"]:checked')?.value || null
+      };
+      localStorage.setItem("projectDraft", JSON.stringify(draft));
+      if (!localStorage.getItem("projectCreatedAt")) {
+          localStorage.setItem("projectCreatedAt", new Date().toLocaleString());
+      }
+      alert("草稿已保存！");
     }
 
     function loadDraft() {

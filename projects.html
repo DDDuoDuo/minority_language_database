@@ -1,7 +1,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>词汇</title>
+  <title>项目管理</title>
   <style>
     body {
       margin: 0;
@@ -138,26 +138,6 @@
       font-size: 24px;
     }
 
-    .project-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 60px;
-      margin-bottom: 40px;
-    }
-
-    .project-button {
-      padding: 20px 40px;
-      font-size: 20px;
-      border: 1px solid #ccc;
-      background-color: white;
-      cursor: pointer;
-      transition: box-shadow 0.2s ease;
-    }
-
-    .project-button:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
     .project-description {
       text-align: center;
       max-width: 800px;
@@ -165,6 +145,67 @@
       font-size: 16px;
       line-height: 1.8;
       color: #333;
+    }
+    .my-projects-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .my-projects-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .my-projects-header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .new-project-button {
+      padding: 8px 14px;
+      font-size: 14px;
+      background-color: #0073e6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .project-table-wrapper {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .project-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .project-table th,
+    .project-table td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: center;
+    }
+
+    .project-table thead {
+      background-color: #f4f4f4;
+    }
+
+    #noProjects {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+    }
+
+    .edit-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -206,13 +247,33 @@
     <h1>欢迎，<span id="username">教授</span></h1>
   </div>
 
-  <div class="project-buttons">
-    <button class="project-button" onclick="window.location.href='modify_project.html'">新建项目</button>
-    <button class="project-button">继续项目</button>
-  </div>
-
   <div class="project-description">
     我们致力于通过收集自带时间信息的词汇数据，通过历史比较的方法，推断汉藏语言或者方言的分化时间，并追踪可能的人类迁移路径，建立开放共享的词汇数据库，开展语言演化研究。
+  </div>
+
+  <div class="my-projects-container">
+    <div class="my-projects-header">
+      <h2>我的项目列表</h2>
+      <button onclick="location.href='modify_project.html'" class="new-project-button" id="newProjectBtn">新建项目</button>
+    </div>
+
+    <div class="project-table-wrapper">
+      <table class="project-table" id="projectTable">
+        <thead>
+          <tr>
+            <th>项目名称</th>
+            <th>词汇数量</th>
+            <th>研究结果</th>
+            <th>地域</th>
+            <th>作者</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="noProjects">暂无项目</div>
+    </div>
   </div>
 </body>
 
@@ -238,6 +299,40 @@
     const userNameSpan = document.getElementById("username");
     if (userNameSpan) userNameSpan.textContent = userName;
   });
+
+  function loadProjectList() {
+    const saved = localStorage.getItem("projectDraft");
+    const tbody = document.querySelector("#projectTable tbody");
+    const noProjects = document.getElementById("noProjects");
+
+    if (!saved) {
+      tbody.innerHTML = "";
+      noProjects.style.display = "block";
+      return;
+    }
+
+    const draft = JSON.parse(saved);
+    const createdAt = localStorage.getItem("projectCreatedAt") || new Date().toLocaleString();
+
+    tbody.innerHTML = `
+      <tr>
+        <td style="padding: 10px;">${draft.projectName || "未命名项目"}</td>
+        <td style="padding: 10px;">--</td>
+        <td style="padding: 10px;">--</td>
+        <td style="padding: 10px;">--</td>
+        <td style="padding: 10px;">梁教授</td>
+        <td style="padding: 10px;">${createdAt}</td>
+        <td style="padding: 10px;">
+          <button onclick="location.href='modify_project.html'" style="padding: 4px 8px; font-size: 12px;">编辑</button>
+        </td>
+      </tr>
+    `;
+
+    noProjects.style.display = "none";
+  }
+
+  document.addEventListener("DOMContentLoaded", loadProjectList);
+
 </script>
 
 </html>

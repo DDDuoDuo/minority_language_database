@@ -88,58 +88,125 @@
       margin: 50px 0;
     }
 
+    .contributor-guidelines {
+      margin-bottom: 40px;
+    }
+
     .contributor-guidelines h2 {
-        font-size: 22px;
-        margin-top: 40px;
-        font-weight: bold;
+      font-size: 22px;
+      margin-top: 40px;
+      font-weight: bold;
     }
 
     .contributor-guidelines ol {
-        padding-left: 40px;
+      padding-left: 40px;
     }
 
     .contributor-guidelines li {
-        margin-bottom: 10px;
-        padding-left: 5px;
+      margin-bottom: 10px;
+      padding-left: 5px;
     }
 
-    .project-form input[type="text"],
     .project-form label {
-        display: block;
-        font-size: 16px;
-        font-weight: 500;
-        color: #333;
+      display: block;
+      font-size: 16px;
+      font-weight: 500;
+      color: #333;
     }
+
+    .project-form input[type="text"] {
+      width: 100%;
+      max-width: 800px;
+      padding: 4px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
     .project-form textarea {
-        width: 100%;
-        max-width: 800px;
-        padding: 4px;
-        box-sizing: border-box;
-        font-size: 14px;
-        margin-top: 10px;
+      width: 100%;
+      max-width: 800px;
+      padding: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .language-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .language-group input {
+      margin-right: 8px;
+    }
+
+    .language-group button {
+      margin-left: 4px;
+    }
+
+    #addLanguageBtn {
+      margin-left: 12px;
+    }
+
+    #language-container {
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    .remove-language {
+      padding: 3px 8px;
+      font-size: 14px;
+      min-width: 60px;
+      margin-top: auto;
+    }
+
+    .file-actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .file-actions .button {
+      padding: 6px 12px;
+      background-color: #ddd;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #000;
+      font-size: 14px;
+    }
+
+    .file-actions .button:hover {
+      background-color: #bbb;
     }
 
     .form-buttons {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
     }
 
     .left-buttons,
-        .right-buttons {
-        display: flex;
-        gap: 16px;
+    .right-buttons {
+    display: flex;
+    gap: 16px;
     }
 
     .page-nav {
-        position: fixed;
-        bottom: 20px;
-        left: 0;
-        right: 0;
-        display: none;
-        justify-content: space-between;
-        padding: 0 40px;
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: none;
+      justify-content: space-between;
+      padding: 0 40px;
     }
 
     .page-nav {
@@ -211,18 +278,30 @@
 
     <div class="project-form">
         <form id="projectForm">
-          <label>项目ID：<input type="text" name="projectId" id="projectId"></label><br><br>
-          <label>项目名称：<input type="text" name="projectName" id="projectName"></label><br><br>
-          <label>项目简介：<br><textarea name="projectDesc" id="projectDesc" rows="4" cols="50"></textarea></label><br><br>
+          <label>项目ID：<input type="text" name="projectId" id="projectId" readonly></label><br><br>
+          <label>项目名称：<input type="text" name="projectName" id="projectName" placeholder="请输入项目名称"></label><br><br>
+          <label>项目简介：<br><textarea name="projectDesc" id="projectDesc" rows="4" cols="50" placeholder="请简要描述该项目的内容、目的或数据来源"></textarea></label><br><br>
       
           <label>项目类型：</label><br>
           <label><input type="radio" name="projectType" value="1"> 目标语言与其他语言的分化时间</label><br>
           <label><input type="radio" name="projectType" value="2"> 多个目标语言的分化时间</label><br>
           <label><input type="radio" name="projectType" value="3"> 目标语言的不同方言的分化时间</label><br><br>
       
-          <label>语言列表：<button type="button">添加语言</button></label><br><br>
-          <label>谱系树：<button type="button">上传谱系树文件</button> <button type="button">查看</button></label><br><br>
-          <label>参考文献：<input type="text" name="references" id="references"></label><br><br>
+          <div class="form-group">
+            <label>语言列表：<button type="button" id="addLanguageBtn">添加语言</button></label>
+            <div id="language-container"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="treeFile">谱系树：</label>
+            <input type="file" id="treeFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt">
+            <div id="treeFileActions" class="file-actions" style="display: none;">
+              <button type="button" id="viewTreeFile">查看</button>
+              <button type="button" id="removeTreeFile">删除</button>
+            </div>
+          </div>
+          
+          <label>参考文献：<input type="text" name="references" id="references" placeholder="请输入参考资料链接或数据来源"></label><br><br>
       
           <div class="form-buttons">
             <div class="left-buttons">
@@ -253,6 +332,189 @@
 <script>
     let currentPage = 1;
     const totalPages = 5;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      let projectId = sessionStorage.getItem("editingProjectId");
+
+      if (!projectId) {
+        const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+        const ids = drafts.map(d => d.id).filter(Boolean);
+        let maxNum = 0;
+        ids.forEach(id => {
+          const match = id.match(/proj_(\\d+)/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        });
+        projectId = `proj_${maxNum + 1}`;
+        sessionStorage.setItem("editingProjectId", projectId);
+      }
+
+      // projectId = projectId.replace(/proj_/, ""); 有bug
+      document.getElementById("projectId").value = projectId;
+
+      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      const existing = drafts.find(p => p.id === projectId);
+
+      if (existing) {
+        document.getElementById("projectName").value = existing.projectName || "";
+        document.getElementById("projectDesc").value = existing.projectDesc || "";
+        document.getElementById("references").value = existing.references || "";
+        if (existing.projectType) {
+          const radio = document.querySelector(`input[name=\"projectType\"][value=\"${existing.projectType}\"]`);
+          if (radio) radio.checked = true;
+        }
+        loadTreeFileFromDraft(existing);
+      }
+
+      const languageContainer = document.getElementById("language-container");
+
+      function updateRemoveButtons() {
+        const removeBtns = document.querySelectorAll(".remove-language");
+        removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
+      }
+
+      function addLanguageInput(value = "") {
+        if (languageContainer.children.length >= 6) {
+          alert("最多只能添加6种语言");
+          return;
+        }
+        const div = document.createElement("div");
+        div.className = "language-group";
+        div.innerHTML = `
+          <input type="text" class="language-input" placeholder="输入语言名称" value="${value}">
+          <button type="button" class="remove-language">移除</button>
+        `;
+        languageContainer.appendChild(div);
+        updateRemoveButtons();
+
+        div.querySelector(".remove-language").addEventListener("click", () => {
+          div.remove();
+          updateRemoveButtons();
+        });
+      }
+
+      if (existing?.languages && Array.isArray(existing.languages)) {
+        existing.languages.forEach(name => addLanguageInput(name));
+        const missingCount = 2 - existing.languages.length;
+        for (let i = 0; i < missingCount; i++) {
+          addLanguageInput();
+        }
+      } else {
+        addLanguageInput();
+        addLanguageInput();
+      }
+
+      document.getElementById("addLanguageBtn").addEventListener("click", () => addLanguageInput());
+
+      const treeFileInput = document.getElementById("treeFile");
+      const viewTreeFile = document.getElementById("viewTreeFile");
+      const removeTreeFile = document.getElementById("removeTreeFile");
+      const treeFileActions = document.getElementById("treeFileActions");
+
+      document.getElementById("viewTreeFile").addEventListener("click", () => {
+        const base64 = localStorage.getItem("tempTreeFileBase64");
+        const type = localStorage.getItem("tempTreeFileType");
+        if (base64 && type) {
+          const blob = base64ToBlob(base64, type);
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        }
+      });
+
+      function loadTreeFileFromDraft(existing) {
+        if (existing?.treeFileBase64 && existing.treeFileName && existing.treeFileType) {
+          const blob = base64ToBlob(existing.treeFileBase64, existing.treeFileType);
+          const url = URL.createObjectURL(blob);
+          viewTreeFile.href = url;
+          viewTreeFile.download = existing.treeFileName;
+          treeFileActions.style.display = "flex";
+        }
+      }
+
+      function base64ToBlob(base64, type) {
+        const binary = atob(base64);
+        const array = [];
+        for (let i = 0; i < binary.length; i++) {
+          array.push(binary.charCodeAt(i));
+        }
+        return new Blob([new Uint8Array(array)], { type: type });
+      }
+
+      treeFileInput.addEventListener("change", () => {
+        const file = treeFileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const base64 = e.target.result.split(',')[1];
+
+          // 保存至 localStorage 临时缓存
+          localStorage.setItem("tempTreeFileBase64", base64);
+          localStorage.setItem("tempTreeFileName", file.name);
+          localStorage.setItem("tempTreeFileType", file.type);
+
+          const blob = base64ToBlob(base64, file.type);
+          const url = URL.createObjectURL(blob);
+
+          viewTreeFile.href = url;
+          viewTreeFile.download = file.name;
+          treeFileActions.style.display = "flex";
+        };
+        reader.readAsDataURL(file);
+      });
+
+      removeTreeFile.addEventListener("click", () => {
+        localStorage.removeItem("tempTreeFileBase64");
+        localStorage.removeItem("tempTreeFileName");
+        localStorage.removeItem("tempTreeFileType");
+
+        treeFileInput.value = "";
+        viewTreeFile.href = "";
+        viewTreeFile.download = "";
+        treeFileActions.style.display = "none";
+      });
+
+
+      window.saveDraft = function () {
+        const currentId = sessionStorage.getItem("editingProjectId");
+        if (!currentId) return;
+
+        const languageInputs = document.querySelectorAll(".language-input");
+        const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
+
+        const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+        const existing = drafts.find(p => p.id === currentId);
+
+        const draft = {
+          id: currentId,
+          projectName: document.getElementById("projectName").value,
+          projectDesc: document.getElementById("projectDesc").value,
+          references: document.getElementById("references").value,
+          projectType: document.querySelector('input[name="projectType"]:checked')?.value || null,
+          languages: languages,
+          createdAt: existing?.createdAt || new Date().toLocaleString(),
+          treeFileBase64: localStorage.getItem("tempTreeFileBase64") || null,
+          treeFileName: localStorage.getItem("tempTreeFileName") || null,
+          treeFileType: localStorage.getItem("tempTreeFileType") || null,
+        };
+
+        const index = drafts.findIndex(p => p.id === currentId);
+        if (index !== -1) {
+          drafts[index] = draft;
+        } else {
+          drafts.push(draft);
+        }
+
+        localStorage.removeItem("tempTreeFileBase64");
+        localStorage.removeItem("tempTreeFileName");
+        localStorage.removeItem("tempTreeFileType");
+
+        localStorage.setItem("projectDrafts", JSON.stringify(drafts));
+        alert("草稿已保存！");
+      };
+    });
 
     function enterProject() {
         document.getElementById("info").classList.remove("active");
@@ -297,18 +559,69 @@
     });
 
     function saveDraft() {
+      const currentId = sessionStorage.getItem("editingProjectId");
+      if (!currentId) return;
+
+      const languageInputs = document.querySelectorAll(".language-input");
+      const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
+
+      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      const existing = drafts.find(p => p.id === currentId);
+
       const draft = {
-        projectId: document.getElementById("projectId").value,
+        id: currentId,
         projectName: document.getElementById("projectName").value,
         projectDesc: document.getElementById("projectDesc").value,
         references: document.getElementById("references").value,
-        projectType: document.querySelector('input[name="projectType"]:checked')?.value || null
+        projectType: document.querySelector('input[name="projectType"]:checked')?.value || null,
+        languages: languages,
+        createdAt: existing?.createdAt || new Date().toLocaleString(),
+        treeFileBase64: localStorage.getItem("tempTreeFileBase64") || null,
+        treeFileName: localStorage.getItem("tempTreeFileName") || null,
+        treeFileType: localStorage.getItem("tempTreeFileType") || null,
       };
-      localStorage.setItem("projectDraft", JSON.stringify(draft));
-      if (!localStorage.getItem("projectCreatedAt")) {
-          localStorage.setItem("projectCreatedAt", new Date().toLocaleString());
+
+      const index = drafts.findIndex(p => p.id === currentId);
+      if (index !== -1) {
+        drafts[index] = draft;
+      } else {
+        drafts.push(draft);
       }
+
+      localStorage.removeItem("tempTreeFileBase64");
+      localStorage.removeItem("tempTreeFileName");
+      localStorage.removeItem("tempTreeFileType");
+
+      localStorage.setItem("projectDrafts", JSON.stringify(drafts));
       alert("草稿已保存！");
+    }
+
+
+    function updateRemoveButtons() {
+      const removeBtns = document.querySelectorAll(".remove-language");
+      removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
+
+      // 添加语言数量与草稿一致性处理提示或间距可在此扩展
+    }
+
+    function addLanguageInput(value = "") {
+      if (languageContainer.children.length >= 6) {
+        alert("最多只能添加6种语言");
+        return;
+      }
+      const div = document.createElement("div");
+      div.className = "language-group";
+      div.innerHTML = `
+        <input type="text" class="language-input" placeholder="输入语言名称" value="${value}">
+        <button type="button" class="remove-language">移除</button>
+      `;
+      languageContainer.appendChild(div);
+      updateRemoveButtons();
+
+      div.querySelector(".remove-language").addEventListener("click", () => {
+        div.remove();
+        updateRemoveButtons();
+      });
     }
 
     function loadDraft() {
@@ -326,8 +639,13 @@
     }
 
     function clearDraft() {
-        localStorage.removeItem("projectDraft");
-        alert("草稿已清除！");
+      if (confirm("确定要清除草稿吗？")) {
+          let drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+          drafts = drafts.filter(p => p.id !== projectId);
+          localStorage.setItem("projectDrafts", JSON.stringify(drafts));
+          alert("草稿已清除！");
+          location.reload();
+      }
     }
 
     document.addEventListener("DOMContentLoaded", loadDraft);

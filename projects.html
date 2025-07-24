@@ -301,35 +301,47 @@
   });
 
   function loadProjectList() {
-    const saved = localStorage.getItem("projectDraft");
+    const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
     const tbody = document.querySelector("#projectTable tbody");
     const noProjects = document.getElementById("noProjects");
 
-    if (!saved) {
-      tbody.innerHTML = "";
+    tbody.innerHTML = "";
+
+    if (drafts.length === 0) {
       noProjects.style.display = "block";
       return;
     }
 
-    const draft = JSON.parse(saved);
-    const createdAt = localStorage.getItem("projectCreatedAt") || new Date().toLocaleString();
-
-    tbody.innerHTML = `
-      <tr>
-        <td style="padding: 10px;">${draft.projectName || "未命名项目"}</td>
-        <td style="padding: 10px;">--</td>
-        <td style="padding: 10px;">--</td>
-        <td style="padding: 10px;">--</td>
-        <td style="padding: 10px;">梁教授</td>
-        <td style="padding: 10px;">${createdAt}</td>
-        <td style="padding: 10px;">
-          <button onclick="location.href='modify_project.html'" style="padding: 4px 8px; font-size: 12px;">编辑</button>
-        </td>
-      </tr>
-    `;
-
     noProjects.style.display = "none";
+
+    drafts.forEach(draft => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${draft.projectName || "未命名项目"}</td>
+        <td>--</td>
+        <td>--</td>
+        <td>--</td>
+        <td>梁教授</td>
+        <td>${draft.createdAt || "--"}</td>
+        <td><button class="edit-button" data-id="${draft.id}">编辑</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll(".edit-button").forEach(button => {
+      button.addEventListener("click", e => {
+        const editId = e.target.getAttribute("data-id");
+        sessionStorage.setItem("editingProjectId", editId);
+        location.href = "modify_project.html";
+      });
+    });
   }
+
+  document.getElementById("newProjectBtn").addEventListener("click", () => {
+    const newId = "proj_" + Date.now();
+    sessionStorage.setItem("editingProjectId", newId);
+    location.href = "modify_project.html";
+  });
 
   document.addEventListener("DOMContentLoaded", loadProjectList);
 

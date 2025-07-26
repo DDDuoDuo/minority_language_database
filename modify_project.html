@@ -135,6 +135,18 @@
       margin-bottom: 20px;
     }
 
+    .language-header {
+      display: flex;
+      align-items: center;
+      gap: 0px;
+      margin-bottom: 10px;
+    }
+
+    .language-label {
+      margin: 0;
+      white-space: nowrap;
+    }
+
     .language-group {
       display: flex;
       align-items: center;
@@ -218,7 +230,7 @@
       justify-content: space-between;
       padding: 0 40px;
     }
-    
+
     .nav-button {
       padding: 10px 20px;
       background-color: #0073e6;
@@ -230,10 +242,10 @@
       cursor: pointer;
     }
 
-    .nav-button:disabled {
+    /* .form-buttons:disabled {
       background-color: #aaa;
       cursor: not-allowed;
-    }
+    } */
   </style>
 </head>
 
@@ -255,7 +267,7 @@
   </header>
 
   <div class="page active" id="info">
-    <div class="page-title">新建项目</div>
+    <div class="page-title" id="pageTitle">新建项目</div>
 
     <div class="contributor-guidelines">
       <h2>贡献者要求：</h2>
@@ -286,11 +298,13 @@
           <label><input type="radio" name="projectType" value="1"> 目标语言与其他语言的分化时间</label><br>
           <label><input type="radio" name="projectType" value="2"> 多个目标语言的分化时间</label><br>
           <label><input type="radio" name="projectType" value="3"> 目标语言的不同方言的分化时间</label><br><br>
-      
-          <div class="form-group">
-            <label>语言列表：<button type="button" id="addLanguageBtn">添加语言</button></label>
-            <div id="language-container"></div>
+
+          <div class="form-group language-header">
+            <label for="language-container" class="language-label">语言列表：</label>
+            <button type="button" id="addLanguageBtn">添加语言</button>
           </div>
+          
+          <div id="language-container"></div>
 
           <div class="form-group">
             <label for="treeFile">谱系树：</label>
@@ -306,7 +320,6 @@
           <div class="form-buttons">
             <div class="left-buttons">
                 <button type="button" class="nav-button" onclick="saveDraft()">保存草稿</button>
-                <button type="button" class="nav-button" onclick="clearDraft()">清除草稿</button>
             </div>
             <div class="right-buttons">
                 <button type="button" class="nav-button" onclick="enterProject()">填写词汇</button>
@@ -322,19 +335,53 @@
   <div class="page" id="page4"><div class="page-title">第四页内容占位</div></div>
   <div class="page" id="page5"><div class="page-title">第五页内容占位</div></div>
 
-  <div class="page-nav">
-    <button class="nav-button" id="prevBtn" disabled>上一页</button>
-    <button class="nav-button" id="nextBtn">下一页</button>
+  <div class="form-buttons">
+    <div class="left-buttons">
+        <button type="button" class="nav-button" id="prevBtn">上一页</button>
+    </div>
+    <div class="right-buttons">
+        <button type="button" class="nav-button" onclick="nextBtn">下一页</button>
+    </div>
   </div>
-
 </body>
 
 <script>
     let currentPage = 1;
     const totalPages = 5;
 
+    let isTreeFileRemoved = false;
+
+    function updateRemoveButtons() {
+      const removeBtns = document.querySelectorAll(".remove-language");
+      removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
+
+      // 添加语言数量与草稿一致性处理提示或间距可在此扩展
+    }
+
+    function addLanguageInput(value = "") {
+      if (languageContainer.children.length >= 6) {
+        alert("最多只能添加6种语言");
+        return;
+      }
+      const div = document.createElement("div");
+      div.className = "language-group";
+      div.innerHTML = `
+        <input type="text" class="language-input" placeholder="输入语言名称" value="${value}">
+        <button type="button" class="remove-language">移除</button>
+      `;
+      languageContainer.appendChild(div);
+      updateRemoveButtons();
+
+      div.querySelector(".remove-language").addEventListener("click", () => {
+        div.remove();
+        updateRemoveButtons();
+      });
+    }
+    window.addLanguageInput = addLanguageInput;
+
     document.addEventListener("DOMContentLoaded", () => {
-      let projectId = sessionStorage.getItem("editingProjectId");
+      const urlParams = new URLSearchParams(window.location.search);
+      let projectId = urlParams.get("id");
 
       if (!projectId) {
         const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
@@ -351,49 +398,48 @@
         sessionStorage.setItem("editingProjectId", projectId);
       }
 
-      // projectId = projectId.replace(/proj_/, ""); 有bug
       document.getElementById("projectId").value = projectId;
 
       const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
       const existing = drafts.find(p => p.id === projectId);
 
+      const treeFileInput = document.getElementById("treeFile");
+      const viewTreeFile = document.getElementById("viewTreeFile");
+      const removeTreeFile = document.getElementById("removeTreeFile");
+      const treeFileActions = document.getElementById("treeFileActions");
+
       if (existing) {
-        document.getElementById("projectName").value = existing.projectName || "";
+        document.getElementById("pageTitle").textContent = "编辑项目";
+        document.getElementById("projectName").value = existing.projectName || "未命名项目";
         document.getElementById("projectDesc").value = existing.projectDesc || "";
         document.getElementById("references").value = existing.references || "";
+
+        if (existing && existing.projectName) {
+          document.title = existing.projectName;
+        } else {
+          document.title = "新建项目";
+        }
+
         if (existing.projectType) {
           const radio = document.querySelector(`input[name=\"projectType\"][value=\"${existing.projectType}\"]`);
           if (radio) radio.checked = true;
         }
-        loadTreeFileFromDraft(existing);
-      }
+        if (existing?.treeFile && !isTreeFileRemoved) {
+          const blob = base64ToBlob(existing.treeFile.content.split(",")[1], existing.treeFile.type);
+          const url = URL.createObjectURL(blob);
+          viewTreeFile.href = url;
+          viewTreeFile.download = existing.treeFile.name;
+          treeFileActions.style.display = "flex";
+          document.getElementById("treeFileActions").style.display = "flex";
 
-      const languageContainer = document.getElementById("language-container");
-
-      function updateRemoveButtons() {
-        const removeBtns = document.querySelectorAll(".remove-language");
-        removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
-      }
-
-      function addLanguageInput(value = "") {
-        if (languageContainer.children.length >= 6) {
-          alert("最多只能添加6种语言");
-          return;
+          localStorage.setItem("tempTreeFileBase64", existing.treeFile.content.split(",")[1]);
+          localStorage.setItem("tempTreeFileName", existing.treeFile.name);
+          localStorage.setItem("tempTreeFileType", existing.treeFile.type);
         }
-        const div = document.createElement("div");
-        div.className = "language-group";
-        div.innerHTML = `
-          <input type="text" class="language-input" placeholder="输入语言名称" value="${value}">
-          <button type="button" class="remove-language">移除</button>
-        `;
-        languageContainer.appendChild(div);
-        updateRemoveButtons();
-
-        div.querySelector(".remove-language").addEventListener("click", () => {
-          div.remove();
-          updateRemoveButtons();
-        });
       }
+
+      languageContainer = document.getElementById("language-container");
+      window.languageContainer = languageContainer;
 
       if (existing?.languages && Array.isArray(existing.languages)) {
         existing.languages.forEach(name => addLanguageInput(name));
@@ -408,11 +454,6 @@
 
       document.getElementById("addLanguageBtn").addEventListener("click", () => addLanguageInput());
 
-      const treeFileInput = document.getElementById("treeFile");
-      const viewTreeFile = document.getElementById("viewTreeFile");
-      const removeTreeFile = document.getElementById("removeTreeFile");
-      const treeFileActions = document.getElementById("treeFileActions");
-
       document.getElementById("viewTreeFile").addEventListener("click", () => {
         const base64 = localStorage.getItem("tempTreeFileBase64");
         const type = localStorage.getItem("tempTreeFileType");
@@ -422,16 +463,6 @@
           window.open(url, "_blank");
         }
       });
-
-      function loadTreeFileFromDraft(existing) {
-        if (existing?.treeFileBase64 && existing.treeFileName && existing.treeFileType) {
-          const blob = base64ToBlob(existing.treeFileBase64, existing.treeFileType);
-          const url = URL.createObjectURL(blob);
-          viewTreeFile.href = url;
-          viewTreeFile.download = existing.treeFileName;
-          treeFileActions.style.display = "flex";
-        }
-      }
 
       function base64ToBlob(base64, type) {
         const binary = atob(base64);
@@ -462,6 +493,7 @@
           viewTreeFile.download = file.name;
           treeFileActions.style.display = "flex";
         };
+        
         reader.readAsDataURL(file);
       });
 
@@ -471,49 +503,12 @@
         localStorage.removeItem("tempTreeFileType");
 
         treeFileInput.value = "";
-        viewTreeFile.href = "";
-        viewTreeFile.download = "";
+        viewTreeFile.removeAttribute("href");
+        viewTreeFile.removeAttribute("download");
+
         treeFileActions.style.display = "none";
+        isTreeFileRemoved = true;
       });
-
-
-      window.saveDraft = function () {
-        const currentId = sessionStorage.getItem("editingProjectId");
-        if (!currentId) return;
-
-        const languageInputs = document.querySelectorAll(".language-input");
-        const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
-
-        const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
-        const existing = drafts.find(p => p.id === currentId);
-
-        const draft = {
-          id: currentId,
-          projectName: document.getElementById("projectName").value,
-          projectDesc: document.getElementById("projectDesc").value,
-          references: document.getElementById("references").value,
-          projectType: document.querySelector('input[name="projectType"]:checked')?.value || null,
-          languages: languages,
-          createdAt: existing?.createdAt || new Date().toLocaleString(),
-          treeFileBase64: localStorage.getItem("tempTreeFileBase64") || null,
-          treeFileName: localStorage.getItem("tempTreeFileName") || null,
-          treeFileType: localStorage.getItem("tempTreeFileType") || null,
-        };
-
-        const index = drafts.findIndex(p => p.id === currentId);
-        if (index !== -1) {
-          drafts[index] = draft;
-        } else {
-          drafts.push(draft);
-        }
-
-        localStorage.removeItem("tempTreeFileBase64");
-        localStorage.removeItem("tempTreeFileName");
-        localStorage.removeItem("tempTreeFileType");
-
-        localStorage.setItem("projectDrafts", JSON.stringify(drafts));
-        alert("草稿已保存！");
-      };
     });
 
     function enterProject() {
@@ -559,96 +554,71 @@
     });
 
     function saveDraft() {
-      const currentId = sessionStorage.getItem("editingProjectId");
-      if (!currentId) return;
+        const currentId = sessionStorage.getItem("editingProjectId");
+        if (!currentId) return;
 
-      const languageInputs = document.querySelectorAll(".language-input");
-      const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
+        const languageInputs = document.querySelectorAll(".language-input");
+        const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
 
-      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
-      const existing = drafts.find(p => p.id === currentId);
+        const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+        const existing = drafts.find(p => p.id === currentId);
 
-      const draft = {
-        id: currentId,
-        projectName: document.getElementById("projectName").value,
-        projectDesc: document.getElementById("projectDesc").value,
-        references: document.getElementById("references").value,
-        projectType: document.querySelector('input[name="projectType"]:checked')?.value || null,
-        languages: languages,
-        createdAt: existing?.createdAt || new Date().toLocaleString(),
-        treeFileBase64: localStorage.getItem("tempTreeFileBase64") || null,
-        treeFileName: localStorage.getItem("tempTreeFileName") || null,
-        treeFileType: localStorage.getItem("tempTreeFileType") || null,
-      };
+        const projectName = document.getElementById("projectName").value.trim();
+        const projectDesc = document.getElementById("projectDesc").value.trim();
+        const references = document.getElementById("references").value.trim();
+        const projectType = document.querySelector('input[name="projectType"]:checked')?.value || null;
 
-      const index = drafts.findIndex(p => p.id === currentId);
-      if (index !== -1) {
-        drafts[index] = draft;
-      } else {
-        drafts.push(draft);
-      }
+        const base64 = localStorage.getItem("tempTreeFileBase64");
+        const name = localStorage.getItem("tempTreeFileName");
+        const type = localStorage.getItem("tempTreeFileType");
 
-      localStorage.removeItem("tempTreeFileBase64");
-      localStorage.removeItem("tempTreeFileName");
-      localStorage.removeItem("tempTreeFileType");
+        const treeFile = document.getElementById("treeFile").files[0];
+        const treeFileObj = base64 ? {
+          name: name,
+          type: type,
+          content: `data:${type};base64,${base64}`
+        } : existing?.treeFile || null;
 
-      localStorage.setItem("projectDrafts", JSON.stringify(drafts));
-      alert("草稿已保存！");
-    }
+        function finalizeSave(treeFileObj) {
+          const draft = {
+            id: currentId,
+            projectName,
+            projectDesc,
+            references,
+            projectType,
+            languages,
+            createdAt: existing?.createdAt || new Date().toLocaleString(),
+            treeFile: isTreeFileRemoved ? null : (treeFileObj || existing?.treeFile || null)
+          };
 
+          const index = drafts.findIndex(p => p.id === currentId);
+          if (index !== -1) {
+            drafts[index] = draft;
+          } else {
+            drafts.push(draft);
+          }
 
-    function updateRemoveButtons() {
-      const removeBtns = document.querySelectorAll(".remove-language");
-      removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
-
-      // 添加语言数量与草稿一致性处理提示或间距可在此扩展
-    }
-
-    function addLanguageInput(value = "") {
-      if (languageContainer.children.length >= 6) {
-        alert("最多只能添加6种语言");
-        return;
-      }
-      const div = document.createElement("div");
-      div.className = "language-group";
-      div.innerHTML = `
-        <input type="text" class="language-input" placeholder="输入语言名称" value="${value}">
-        <button type="button" class="remove-language">移除</button>
-      `;
-      languageContainer.appendChild(div);
-      updateRemoveButtons();
-
-      div.querySelector(".remove-language").addEventListener("click", () => {
-        div.remove();
-        updateRemoveButtons();
-      });
-    }
-
-    function loadDraft() {
-        const saved = localStorage.getItem("projectDraft");
-        if (!saved) return;
-        const draft = JSON.parse(saved);
-        document.getElementById("projectId").value = draft.projectId || "";
-        document.getElementById("projectName").value = draft.projectName || "";
-        document.getElementById("projectDesc").value = draft.projectDesc || "";
-        document.getElementById("references").value = draft.references || "";
-        if (draft.projectType) {
-            const radio = document.querySelector(`input[name="projectType"][value="${draft.projectType}"]`);
-            if (radio) radio.checked = true;
-        }
-    }
-
-    function clearDraft() {
-      if (confirm("确定要清除草稿吗？")) {
-          let drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
-          drafts = drafts.filter(p => p.id !== projectId);
           localStorage.setItem("projectDrafts", JSON.stringify(drafts));
-          alert("草稿已清除！");
+          alert("草稿已保存！");
           location.reload();
-      }
-    }
+        }
 
-    document.addEventListener("DOMContentLoaded", loadDraft);
+        if (treeFile) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const treeFileObj = {
+              name: treeFile.name,
+              type: treeFile.type,
+              content: e.target.result
+            };
+            finalizeSave(treeFileObj);
+          };
+          reader.readAsDataURL(treeFile);
+        } else {
+          finalizeSave(null);
+        }
+    };
+  window.saveDraft = saveDraft;
 </script>
 
 </html>

@@ -68,68 +68,45 @@
       margin-right: 120px;
     }
 
-    .overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+    .dropdown-menu {
+        position: absolute;
+        top: 70px;
+        right: 190px;
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        width: 140px;
+        z-index: 9999;
+        overflow: hidden;
     }
 
-    .login-popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: white;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      border-radius: 10px;
-      z-index: 1000;
-      width: 300px;
-      text-align: center;
+    .dropdown-menu a {
+        display: block;
+        padding: 10px 16px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
     }
 
-    .login-popup h2 {
-      margin: 0 0 10px;
+    .dropdown-menu a:hover {
+        background-color: #f0f0f0;
     }
 
-    .login-popup button {
-      background-color: #0073e6;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 12px;
+    .dropdown-menu button.dropdown-link {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
     }
 
-    .login-popup .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .login-popup input {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .close-icon {
-      width: 25px;
-      height: 25px;
+    .dropdown-menu button.dropdown-link:hover {
+        background-color: #f0f0f0;
     }
 
     .welcome-container {
@@ -207,6 +184,26 @@
       font-size: 12px;
       cursor: pointer;
     }
+
+    .delete-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 16px;
+      gap: 10px;
+    }
+
+    .page-btn {
+      padding: 4px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -226,25 +223,19 @@
       </nav>
     </div>
 
-    <div class="profile" onclick="showLoginPopup()">
-      <img src="img/profileImg.png" alt="头像">
+    <div class="profile" id="profile">
+      <img id="profileImg" src="img/profileImg.png" alt="头像">
+    </div>
+
+    <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
+      <a href="#">我的账户</a>
+      <a href="projects.html">管理项目</a>
+      <button class="dropdown-link" id="logoutBtn">退出登录</button>
     </div>
   </header>
 
-  <div class="overlay"></div>
-
-  <div class="login-popup">
-    <button class="close-btn" onclick="closePopup()">
-      <img src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-close-512.png" alt="关闭" class="close-icon">
-    </button>
-    <h2>登陆账号</h2>
-    <input type="email" placeholder="邮箱" />
-    <input type="password" placeholder="密码" />
-    <button onclick="submitLogin()">登录</button>
-  </div>
-
   <div class="welcome-container">
-    <h1>欢迎，<span id="username">教授</span></h1>
+    <h1>欢迎，<span id="username"></span>教授</h1>
   </div>
 
   <div class="project-description">
@@ -254,7 +245,7 @@
   <div class="my-projects-container">
     <div class="my-projects-header">
       <h2>我的项目列表</h2>
-      <button onclick="location.href='modify_project.html'" class="new-project-button" id="newProjectBtn">新建项目</button>
+      <button class="new-project-button" id="newProjectBtn">新建项目</button>
     </div>
 
     <div class="project-table-wrapper">
@@ -273,6 +264,12 @@
         <tbody></tbody>
       </table>
       <div id="noProjects">暂无项目</div>
+    </div>
+
+    <div class="pagination-container">
+      <button id="prevPage" class="page-btn">←</button>
+      <span id="pageIndicator">第 1 页</span>
+      <button id="nextPage" class="page-btn">→</button>
     </div>
   </div>
 </body>
@@ -293,17 +290,71 @@
     closePopup();
   }
 
-  const userName = "梁教授";
+  const userName = "梁仁隽";
+
+  let currentPage = 1;
+  const pageSize = 5;
+  let totalPages = 1;
 
   document.addEventListener("DOMContentLoaded", () => {
+    if (sessionStorage.getItem("isLoggedIn") !== "true") {
+      window.location.href = "language_map.html";
+      return;
+    }
+
     const userNameSpan = document.getElementById("username");
     if (userNameSpan) userNameSpan.textContent = userName;
+
+    function setupProfileMenu() {
+        const profileImg = document.getElementById("profileImg");
+        const dropdown = document.getElementById("dropdownMenu");
+
+        if (!profileImg || !dropdown) return;
+
+        profileImg.onclick = () => {
+            if (sessionStorage.getItem("isLoggedIn") === "true") {
+              dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
+            } else {
+              window.location.href = "language_map.html";
+            }
+        };
+
+        document.addEventListener("click", (e) => {
+            if (!profileImg.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
+            }
+        });
+    }
+
+    setupProfileMenu();
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+        sessionStorage.removeItem("isLoggedIn");
+        alert("已退出登录");
+        location.reload();
+        });
+    }
+
+    document.getElementById("prevPage").addEventListener("click", () => {
+      currentPage--;
+      loadProjectList();
+    });
+
+    document.getElementById("nextPage").addEventListener("click", () => {
+      currentPage++;
+      loadProjectList();
+    });
   });
 
   function loadProjectList() {
     const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
     const tbody = document.querySelector("#projectTable tbody");
     const noProjects = document.getElementById("noProjects");
+
+    const totalPages = Math.ceil(drafts.length / pageSize);
+    const start = (currentPage - 1) * pageSize;
 
     tbody.innerHTML = "";
 
@@ -314,16 +365,19 @@
 
     noProjects.style.display = "none";
 
-    drafts.forEach(draft => {
+    drafts.slice(start, start + pageSize).forEach((draft, index) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${draft.projectName || "未命名项目"}</td>
         <td>--</td>
         <td>--</td>
         <td>--</td>
-        <td>梁教授</td>
+        <td>${userName}</td>
         <td>${draft.createdAt || "--"}</td>
-        <td><button class="edit-button" data-id="${draft.id}">编辑</button></td>
+        <td>
+          <button class="edit-button" data-id="${draft.id}">编辑</button>
+          <button class="delete-button" data-id="${draft.id}">删除</button>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -332,15 +386,39 @@
       button.addEventListener("click", e => {
         const editId = e.target.getAttribute("data-id");
         sessionStorage.setItem("editingProjectId", editId);
-        location.href = "modify_project.html";
+        location.href = `modify_project.html?id=${editId}`;
       });
     });
+
+    document.querySelectorAll(".delete-button").forEach(button => {
+      button.addEventListener("click", e => {
+        const deleteId = e.target.getAttribute("data-id");
+        if (confirm("确定要删除该项目吗？")) {
+          let drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+          drafts = drafts.filter(p => p.id !== deleteId);
+          localStorage.setItem("projectDrafts", JSON.stringify(drafts));
+
+          const totalAfterDelete = Math.ceil(drafts.length / pageSize);
+          if (currentPage > totalAfterDelete) {
+            currentPage = Math.max(1, totalAfterDelete);
+          }
+
+          loadProjectList();
+          alert("已删除项目");
+        }
+      });
+    });
+
+    document.getElementById("pageIndicator").textContent = `第 ${currentPage} 页`;
+    document.getElementById("prevPage").style.display = (currentPage > 1) ? "inline-block" : "none";
+    document.getElementById("nextPage").style.display = (currentPage < totalPages) ? "inline-block" : "none";
+    document.querySelector(".pagination-container").style.display = (totalPages > 1) ? "flex" : "none";
   }
 
   document.getElementById("newProjectBtn").addEventListener("click", () => {
     const newId = "proj_" + Date.now();
     sessionStorage.setItem("editingProjectId", newId);
-    location.href = "modify_project.html";
+    location.href = `modify_project.html?id=${newId}`;
   });
 
   document.addEventListener("DOMContentLoaded", loadProjectList);

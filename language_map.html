@@ -309,7 +309,7 @@
         return;
     }
 
-    localStorage.setItem("isLoggedIn", "true");
+    sessionStorage.setItem("isLoggedIn", "true");
 
     closePopup();
 
@@ -324,10 +324,10 @@
         if (!profileImg || !dropdown) return;
 
         profileImg.onclick = () => {
-            if (localStorage.getItem("isLoggedIn") === "true") {
-            dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
+            if (sessionStorage.getItem("isLoggedIn") === "true") {
+                dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
             } else {
-            showLoginPopup();
+                showLoginPopup();
             }
         };
 
@@ -338,12 +338,10 @@
         });
     }
 
-    setupProfileMenu();
-
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("isLoggedIn");
+        sessionStorage.removeItem("isLoggedIn");
         alert("已退出登录");
         location.reload();
         });

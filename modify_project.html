@@ -68,6 +68,47 @@
       margin-right: 120px;
     }
 
+    .dropdown-menu {
+        position: absolute;
+        top: 70px;
+        right: 190px;
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        width: 140px;
+        z-index: 9999;
+        overflow: hidden;
+    }
+
+    .dropdown-menu a {
+        display: block;
+        padding: 10px 16px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .dropdown-menu a:hover {
+        background-color: #f0f0f0;
+    }
+
+    .dropdown-menu button.dropdown-link {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .dropdown-menu button.dropdown-link:hover {
+        background-color: #f0f0f0;
+    }
+
     .page {
       display: none;
       max-width: 800px;
@@ -88,21 +129,21 @@
       margin: 50px 0;
     }
 
-    .contributor-guidelines {
+    .guidelines {
       margin-bottom: 40px;
     }
 
-    .contributor-guidelines h2 {
+    .guidelines h2 {
       font-size: 22px;
       margin-top: 40px;
       font-weight: bold;
     }
 
-    .contributor-guidelines ol {
+    .guidelines ol {
       padding-left: 40px;
     }
 
-    .contributor-guidelines li {
+    .guidelines li {
       margin-bottom: 10px;
       padding-left: 5px;
     }
@@ -207,28 +248,8 @@
 
     .left-buttons,
     .right-buttons {
-    display: flex;
-    gap: 16px;
-    }
-
-    .page-nav {
-      position: fixed;
-      bottom: 20px;
-      left: 0;
-      right: 0;
-      display: none;
-      justify-content: space-between;
-      padding: 0 40px;
-    }
-
-    .page-nav {
-      position: fixed;
-      bottom: 20px;
-      left: 0;
-      right: 0;
-      display: none;
-      justify-content: space-between;
-      padding: 0 40px;
+      display: flex;
+      gap: 16px;
     }
 
     .nav-button {
@@ -242,10 +263,99 @@
       cursor: pointer;
     }
 
-    /* .form-buttons:disabled {
+    .nav-button:disabled {
       background-color: #aaa;
       cursor: not-allowed;
-    } */
+    }
+
+    .page-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+    }
+
+    .vocab-table-container {
+      max-width: 1000px;
+      margin: 40px auto;
+    }
+
+    .vocab-table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .vocab-table-header h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .new-vocab-button {
+      padding: 8px 14px;
+      font-size: 14px;
+      background-color: #0073e6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .vocab-table-wrapper {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .vocab-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .vocab-table th,
+    .vocab-table td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: center;
+    }
+
+    .vocab-table thead {
+      background-color: #f4f4f4;
+    }
+
+    #noVocabs {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+    }
+
+    .edit-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .delete-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pagination-container {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin-top: 16px;
+      gap: 10px;
+    }
+
+    .page-btn {
+      padding: 4px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -255,36 +365,28 @@
       <img src="img/EdUHK_logo.png" alt="香港教育大学 Logo">
     </div>
 
-    <div class="menu">
-        <nav>
-        <ul></ul>
-        </nav>
-    </div>
+    <div style="width: 226px;"></div>
 
     <div class="profile">
-      <img src="img/profileImg.png" alt="头像">
+      <img id="profileImg" src="img/profileImg.png" alt="头像">
+    </div>
+
+    <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
+      <a href="#">我的账户</a>
+      <a href="projects.html">管理项目</a>
+      <button class="dropdown-link" id="logoutBtn">退出登录</button>
     </div>
   </header>
 
   <div class="page active" id="info">
-    <div class="page-title" id="pageTitle">新建项目</div>
+    <div class="page-title" id="infoPageTitle">新建项目</div>
 
-    <div class="contributor-guidelines">
+    <div class="guidelines">
       <h2>贡献者要求：</h2>
       <ol>
         <li>具有目标语言词表，涵盖至少3个方言</li>
         <li>每个方言要求2000词以上</li>
         <li>谱系树</li>
-      </ol>
-
-      <h2>注意事项：</h2>
-      <ol>
-        <li>什么是自带时间信息的词：XX、XX、XX……</li>
-        <li>什么词汇不适合用作证据：XX、XX、XX……</li>
-        <li>用于断代的时间参考有哪些：XX、XX、XX……</li>
-        <li>时间的上限和下限的确定：XX……</li>
-        <li>需将词汇分为不同的历史层次：早期、中期、后期</li>
-        <li>不要使用具有多义的固有词</li>
       </ol>
     </div>
 
@@ -319,43 +421,209 @@
       
           <div class="form-buttons">
             <div class="left-buttons">
-                <button type="button" class="nav-button" onclick="saveDraft()">保存草稿</button>
+                <button type="button" class="nav-button" id="leftBtn" onclick="saveDraft()">保存草稿</button>
+                <button type="button" class="nav-button" id="leftBtn" onclick="returnPage()">返回</button>
             </div>
             <div class="right-buttons">
-                <button type="button" class="nav-button" onclick="enterProject()">填写词汇</button>
+                <button type="button" class="nav-button"id="rightBtn" onclick="showPage(1)">下一页</button>
             </div>
           </div>
         </form>
       </div>
   </div>
 
-  <div class="page" id="page1"><div class="page-title">第一页内容占位</div></div>
-  <div class="page" id="page2"><div class="page-title">第二页内容占位</div></div>
-  <div class="page" id="page3"><div class="page-title">第三页内容占位</div></div>
-  <div class="page" id="page4"><div class="page-title">第四页内容占位</div></div>
-  <div class="page" id="page5"><div class="page-title">第五页内容占位</div></div>
+  <div class="page" id="vocab">
+    <div class="page-title" id="vocabPageTitle">新建项目</div>
 
-  <div class="form-buttons">
-    <div class="left-buttons">
-        <button type="button" class="nav-button" id="prevBtn">上一页</button>
+    <div class="guidelines">
+      <h2>注意事项：</h2>
+      <ol>
+        <li>什么是自带时间信息的词：XX、XX、XX……</li>
+        <li>什么词汇不适合用作证据：XX、XX、XX……</li>
+        <li>用于断代的时间参考有哪些：XX、XX、XX……</li>
+        <li>时间的上限和下限的确定：XX……</li>
+        <li>需将词汇分为不同的历史层次：早期、中期、后期</li>
+        <li>不要使用具有多义的固有词</li>
+      </ol>
     </div>
-    <div class="right-buttons">
-        <button type="button" class="nav-button" onclick="nextBtn">下一页</button>
+
+    <div class="project-form">
+      <form id="projectForm">
+        <div class="vocab-table-container">
+          <div class="vocab-table-header">
+            <h2 id="vocabListTitle">词汇列表</h2>
+            <button type="button" class="new-vocab-button" id="addVocabBtn">添加词汇</button>
+          </div>
+          
+          <div class="vocab-table-wrapper">
+            <table class="vocab-table" id="vocabTable">
+              <thead>
+                <tr>
+                  <th>词项</th>
+                  <th>历史层次</th>
+                  <th>完全普遍对应</th>
+                  <th>不完全普遍对应</th>
+                  <th>放宽的完全普遍对应</th>
+                  <th>时间信息</th>
+                  <th>证据词汇</th>
+                  <th>录入时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="vocabBody">
+              </tbody>
+            </table>
+
+            <div id="noVocabs">暂无词汇</div>
+          </div>
+        </div>
+
+        <div class="pagination-container">
+          <button type="button" id="prevVocabPage" class="page-btn">←</button>
+          <span id="pageIndicator">第 1 页</span>
+          <button type="button" id="nextVocabPage" class="page-btn">→</button>
+        </div>
+        
+        <div class="page-buttons">
+          <div class="left-buttons">
+            <button type="button" class="nav-button" id="leftBtn" onclick="saveDraft()">保存草稿</button>
+            <button type="button" class="nav-button" id="leftBtn" onclick="returnPage()">返回</button>
+          </div>
+          <div class="right-buttons">
+            <button type="button" class="nav-button" onclick="showPage(0)">上一页</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="page" id="page1">
+    <div class="page-title">词汇选择</div>
+
+    <div class="form-group">
+      <label><strong>类别：</strong></label><br>
+      <div id="categoryGroup">
+        <label><input type="radio" name="category" value="工具质料"> 工具质料</label><br>
+        <label><input type="radio" name="category" value="禾谷类作物"> 禾谷类作物</label><br>
+        <label><input type="radio" name="category" value="蔬菜"> 蔬菜</label><br>
+        <label><input type="radio" name="category" value="水果"> 水果</label><br>
+        <label><input type="radio" name="category" value="家畜"> 家畜</label><br>
+        <label><input type="radio" name="category" value="外来文化概念"> 外来文化概念</label>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label><strong>词表：</strong></label><br>
+      <div id="wordListGroup">
+      </div>
+    </div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button" onclick="saveVocab()">保存并返回</button>
+        <button type="button" class="nav-button" onclick="showPage(1)">返回</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page2">
+    <div class="page-title">词汇输入</div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button prevBtn">上一页</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+  <div class="page" id="page3">
+    <div class="page-title">词汇比较</div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button prevBtn">上一页</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+  <div class="page" id="page4">
+    <div class="page-title">历史层级</div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button prevBtn">上一页</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="page" id="page5">
+    <div class="page-title">对应情况</div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button prevBtn">上一页</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page6">
+    <div class="page-title">可释性与同源性</div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button prevBtn">上一页</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn">下一页</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page7">
+    <div class="page-title">时间信息</div>
+
+    <div class="page-buttons">
+      <div class="left-buttons">
+        <button type="button" class="nav-button prevBtn">上一页</button>
+      </div>
+      <div class="right-buttons">
+        <button type="button" class="nav-button nextBtn" id="endPage">下一页</button>
+      </div>
     </div>
   </div>
 </body>
 
 <script>
-    let currentPage = 1;
-    const totalPages = 5;
+    let currentPage = 0;
+    const totalPages = 8;
+
+    let currentVocabPage = 1;
+    const pageSize = 5;
+    let totalVocabPages = 1;
 
     let isTreeFileRemoved = false;
+
+    let vocabData = [];
+    let editingVocabIndex = null;
+
+    let originalDraft = null;
 
     function updateRemoveButtons() {
       const removeBtns = document.querySelectorAll(".remove-language");
       removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
-
-      // 添加语言数量与草稿一致性处理提示或间距可在此扩展
     }
 
     function addLanguageInput(value = "") {
@@ -383,6 +651,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       let projectId = urlParams.get("id");
 
+      document.querySelector(".page-buttons").style.display = "none";
+
       if (!projectId) {
         const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
         const ids = drafts.map(d => d.id).filter(Boolean);
@@ -409,10 +679,12 @@
       const treeFileActions = document.getElementById("treeFileActions");
 
       if (existing) {
-        document.getElementById("pageTitle").textContent = "编辑项目";
+        document.getElementById("infoPageTitle").textContent = "编辑项目";
+        document.getElementById("vocabPageTitle").textContent = "编辑项目";
         document.getElementById("projectName").value = existing.projectName || "未命名项目";
         document.getElementById("projectDesc").value = existing.projectDesc || "";
         document.getElementById("references").value = existing.references || "";
+        originalDraft = JSON.stringify(existing);
 
         if (existing && existing.projectName) {
           document.title = existing.projectName;
@@ -436,6 +708,9 @@
           localStorage.setItem("tempTreeFileName", existing.treeFile.name);
           localStorage.setItem("tempTreeFileType", existing.treeFile.type);
         }
+
+        vocabData = existing.vocabList || [];
+        loadVocabList(vocabData);
       }
 
       languageContainer = document.getElementById("language-container");
@@ -481,7 +756,6 @@
         reader.onload = function (e) {
           const base64 = e.target.result.split(',')[1];
 
-          // 保存至 localStorage 临时缓存
           localStorage.setItem("tempTreeFileBase64", base64);
           localStorage.setItem("tempTreeFileName", file.name);
           localStorage.setItem("tempTreeFileType", file.type);
@@ -509,116 +783,355 @@
         treeFileActions.style.display = "none";
         isTreeFileRemoved = true;
       });
-    });
 
-    function enterProject() {
-        document.getElementById("info").classList.remove("active");
-        document.querySelector(".form-buttons").style.display = "none";
-        currentPage = 1;
+      window.deleteVocab = function(id) {
+        if (confirm("确定要删除该词汇吗？")) {
+          const index = vocabData.findIndex(item => item.id === id);
+          if (index !== -1) {
+            vocabData.splice(index, 1);
+            loadVocabList(vocabData);
+          }
+
+          const totalAfterDelete = Math.ceil(vocabData.length / pageSize);
+          if (currentVocabPage > totalAfterDelete) {
+            currentVocabPage = Math.max(1, totalAfterDelete);
+          }
+
+            loadVocabList();
+            alert("已删除词汇");
+        }
+      };
+
+      document.getElementById("addVocabBtn").addEventListener("click", () => {
+        editingVocabIndex = null;
+        currentPage = 2;
         showPage(currentPage);
-        document.querySelector(".page-nav").style.display = "flex";
-    }
+
+        document.querySelectorAll('input[name="category"]').forEach(r => r.checked = false);
+        document.getElementById("wordListGroup").innerHTML = "";
+      });
+
+      const wordOptions = {
+        "工具质料": ["石", "铜", "铁", "木", "骨", "牙", "金", "锡", "银"],
+        "禾谷类作物": ["稻", "小麦", "玉米"],
+        "蔬菜": ["白菜", "萝卜"],
+        "水果": ["苹果", "梨"],
+        "家畜": ["牛", "羊"],
+        "外来文化概念": ["佛", "汉字", "钱币"]
+      };
+
+      document.querySelectorAll('input[name="category"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+          const selectedCategory = this.value;
+          const wordList = wordOptions[selectedCategory] || [];
+          const wordListGroup = document.getElementById("wordListGroup");
+
+          wordListGroup.innerHTML = wordList.map(word =>
+            `<label><input type="radio" name="word" value="${word}"> ${word}</label><br>`
+          ).join("");
+        });
+      });
+
+      document.getElementById("prevVocabPage").addEventListener("click", () => {
+        currentVocabPage--;
+        loadVocabList();
+      });
+
+      document.getElementById("nextVocabPage").addEventListener("click", () => {
+        currentVocabPage++;
+        loadVocabList();
+      });
+
+      function setupProfileMenu() {
+        const profileImg = document.getElementById("profileImg");
+        const dropdown = document.getElementById("dropdownMenu");
+
+        if (!profileImg || !dropdown) return;
+
+        profileImg.onclick = () => {
+            if (sessionStorage.getItem("isLoggedIn") === "true") {
+              dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
+            } else {
+              window.location.href = "language_map.html";
+            }
+        };
+
+        document.addEventListener("click", (e) => {
+            if (!profileImg.contains(e.target) && !dropdown.contains(e.target)) {
+              dropdown.style.display = "none";
+            }
+        });
+      }
+
+      setupProfileMenu();
+
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          sessionStorage.removeItem("isLoggedIn");
+          alert("已退出登录");
+          location.reload();
+        });
+      }
+
+      window.addEventListener("beforeunload", (e) => {
+        if (isDraftModified()) {
+          e.preventDefault();
+          e.returnValue = "您有未保存的更改，确定要离开吗？";
+        }
+      });
+    });
 
     function showPage(pageNum) {
-        for (let i = 1; i <= totalPages; i++) {
-            document.getElementById('page' + i).classList.remove('active');
-        }
+      document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
 
-        if (pageNum === 0) {
-            document.getElementById("info").classList.add("active");
-            document.querySelector(".form-buttons").style.display = "flex";
-            document.querySelector(".page-nav").style.display = "none";
-            return;
-        }
+      let pageId = '';
+      if (pageNum === 0) pageId = 'info';
+      else if (pageNum === 1) pageId = 'vocab';
+      else pageId = 'page' + (pageNum - 1);
 
-        document.getElementById('page' + pageNum).classList.add('active');
-        document.getElementById('prevBtn').disabled = false;
-        document.getElementById('nextBtn').disabled = (pageNum === totalPages);
+      const pageEl = document.getElementById(pageId);
+      if (pageEl) pageEl.classList.add('active');
+
+      if (pageNum === 0) {
+        currentPage = 0
+        document.querySelector(".form-buttons").style.display = "flex";
+        document.querySelector(".page-buttons").style.display = "none";
+        return;
+      } else if (pageNum === 1) {
+        currentPage = 1;
+        document.querySelector(".form-buttons").style.display = "none";
+        document.querySelector(".page-buttons").style.display = "flex";
+        return;
+      } else {
+        document.getElementById(pageId).classList.add('active');
+        document.getElementById("endPage").disabled = true;
+      }
     }
 
-    document.getElementById('prevBtn').addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        showPage(currentPage);
-      } else if (currentPage === 1) {
-        currentPage = 0;
-        showPage(currentPage);
-      }
+    document.querySelectorAll('.prevBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (currentPage > 0) {
+          currentPage--;
+          showPage(currentPage);
+        }
+      });
     });
 
-    document.getElementById('nextBtn').addEventListener('click', () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        showPage(currentPage);
-      }
+    document.querySelectorAll('.nextBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          showPage(currentPage);
+        }
+      });
     });
 
     function saveDraft() {
-        const currentId = sessionStorage.getItem("editingProjectId");
-        if (!currentId) return;
+      const currentId = sessionStorage.getItem("editingProjectId");
+      if (!currentId) return;
 
-        const languageInputs = document.querySelectorAll(".language-input");
-        const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
+      const languageInputs = document.querySelectorAll(".language-input");
+      const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
 
-        const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
-        const existing = drafts.find(p => p.id === currentId);
+      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      const existing = drafts.find(p => p.id === currentId);
 
-        const projectName = document.getElementById("projectName").value.trim();
-        const projectDesc = document.getElementById("projectDesc").value.trim();
-        const references = document.getElementById("references").value.trim();
-        const projectType = document.querySelector('input[name="projectType"]:checked')?.value || null;
+      const projectName = document.getElementById("projectName").value.trim();
+      const projectDesc = document.getElementById("projectDesc").value.trim();
+      const references = document.getElementById("references").value.trim();
+      const projectType = document.querySelector('input[name="projectType"]:checked')?.value || null;
 
-        const base64 = localStorage.getItem("tempTreeFileBase64");
-        const name = localStorage.getItem("tempTreeFileName");
-        const type = localStorage.getItem("tempTreeFileType");
+      const base64 = localStorage.getItem("tempTreeFileBase64");
+      const name = localStorage.getItem("tempTreeFileName");
+      const type = localStorage.getItem("tempTreeFileType");
 
-        const treeFile = document.getElementById("treeFile").files[0];
-        const treeFileObj = base64 ? {
-          name: name,
-          type: type,
-          content: `data:${type};base64,${base64}`
-        } : existing?.treeFile || null;
+      const treeFile = document.getElementById("treeFile").files[0];
+      const treeFileObj = base64 ? {
+        name: name,
+        type: type,
+        content: `data:${type};base64,${base64}`
+      } : existing?.treeFile || null;
 
-        function finalizeSave(treeFileObj) {
-          const draft = {
-            id: currentId,
-            projectName,
-            projectDesc,
-            references,
-            projectType,
-            languages,
-            createdAt: existing?.createdAt || new Date().toLocaleString(),
-            treeFile: isTreeFileRemoved ? null : (treeFileObj || existing?.treeFile || null)
-          };
+      function finalizeSave(treeFileObj) {
+        const draft = {
+          id: currentId,
+          projectName,
+          projectDesc,
+          references,
+          projectType,
+          languages,
+          createdAt: existing?.createdAt || new Date().toLocaleString(),
+          treeFile: isTreeFileRemoved ? null : (treeFileObj || existing?.treeFile || null),
+          vocabList: vocabData,
+        };
 
-          const index = drafts.findIndex(p => p.id === currentId);
-          if (index !== -1) {
-            drafts[index] = draft;
-          } else {
-            drafts.push(draft);
-          }
-
-          localStorage.setItem("projectDrafts", JSON.stringify(drafts));
-          alert("草稿已保存！");
-          location.reload();
-        }
-
-        if (treeFile) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const treeFileObj = {
-              name: treeFile.name,
-              type: treeFile.type,
-              content: e.target.result
-            };
-            finalizeSave(treeFileObj);
-          };
-          reader.readAsDataURL(treeFile);
+        const index = drafts.findIndex(p => p.id === currentId);
+        if (index !== -1) {
+          drafts[index] = draft;
         } else {
-          finalizeSave(null);
+          drafts.push(draft);
         }
+
+        localStorage.setItem("projectDrafts", JSON.stringify(drafts));
+        if (currentPage <= 1) alert("草稿已保存！");
+      }
+
+      if (treeFile) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const treeFileObj = {
+            name: treeFile.name,
+            type: treeFile.type,
+            content: e.target.result
+          };
+          finalizeSave(treeFileObj);
+        };
+        reader.readAsDataURL(treeFile);
+      } else {
+        finalizeSave(null);
+      }
     };
-  window.saveDraft = saveDraft;
+
+    window.saveDraft = saveDraft;
+
+    function loadVocabList(vocabList) {
+      const tbody = document.getElementById("vocabBody");
+      const noVocabs = document.getElementById("noVocabs");
+
+      const totalVocabPages = Math.ceil(vocabData.length / pageSize);
+      const start = (currentVocabPage - 1) * pageSize;
+
+      tbody.innerHTML = "";
+
+      if (vocabData.length === 0) {
+        noVocabs.style.display = "block";
+        return;
+      }
+
+      noVocabs.style.display = "none";
+
+      vocabData.slice(start, start + pageSize).forEach((item, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${item.word || "--"}</td>
+          <td>--</td>
+          <td>Y/N</td>
+          <td>Y/N</td>
+          <td>Y/N</td>
+          <td>${item.time || "--"}</td>
+          <td>${item.evidence || "--"}</td>
+          <td>${item.recordedAt || "--"}</td>
+          <td>
+            <button type="button" class="edit-button" data-id="${item.id}">编辑</button>
+            <button type="button" class="delete-button" onclick="deleteVocab(${item.id})">删除</button>
+          </td>
+        `;
+
+        tbody.appendChild(row);
+
+        document.getElementById("vocabListTitle").textContent = `词汇列表（已有 ${vocabData.length} 个词汇）`;
+
+        const editBtn = row.querySelector(".edit-button");
+        editBtn.addEventListener("click", () => {
+          const vocabId = parseInt(editBtn.getAttribute("data-id"));
+          const vocab = vocabData.find(item => item.id === vocabId);
+          editingVocabIndex = vocabData.findIndex(item => item.id === vocabId);
+          currentPage = 2;
+          showPage(currentPage);
+
+          if (vocab) {
+            const catRadio = document.querySelector(`input[name="category"][value="${vocab.category}"]`);
+            if (catRadio) {
+              catRadio.checked = true;
+              catRadio.dispatchEvent(new Event('change'));
+
+              const observer = new MutationObserver(() => {
+                const wordRadio = document.querySelector(`input[name="word"][value="${vocab.word}"]`);
+                if (wordRadio) {
+                  wordRadio.checked = true;
+                  observer.disconnect();
+                }
+              });
+
+              observer.observe(document.getElementById("wordListGroup"), {
+                childList: true,
+                subtree: true,
+              });
+
+              setTimeout(() => {
+                const wordRadio = document.querySelector(`input[name="word"][value="${vocab.word}"]`);
+                if (wordRadio) {
+                  wordRadio.checked = true;
+                }
+              }, 50);
+            }
+          }
+        });
+      });
+
+      document.getElementById("pageIndicator").textContent = `第 ${currentVocabPage} 页`;
+      document.getElementById("prevVocabPage").style.display = (currentVocabPage > 1) ? "inline-block" : "none";
+      document.getElementById("nextVocabPage").style.display = (currentVocabPage < totalVocabPages) ? "inline-block" : "none";
+      document.querySelector(".pagination-container").style.display = (totalVocabPages > 1) ? "flex" : "none";
+    }
+
+    window.loadVocabList = loadVocabList;
+
+    function saveVocab() {
+      const category = document.querySelector('input[name="category"]:checked')?.value;
+      const word = document.querySelector('input[name="word"]:checked')?.value;
+
+      if (!category || !word) {
+        alert("请选择类别和词汇");
+        return;
+      }
+
+      const vocabEntry = {
+        id: editingVocabIndex === null
+          ? (vocabData.length > 0 ? Math.max(...vocabData.map(v => v.id)) + 1 : 1)
+          : vocabData[editingVocabIndex].id,
+        category,
+        word,
+        level: "",
+        fullMatch: false,
+        partialMatch: false,
+        relaxedMatch: false,
+        time: "",
+        evidence: "",
+        recordedAt: editingVocabIndex === null 
+          ? new Date().toLocaleString()
+          : vocabData[editingVocabIndex].recordedAt,
+      };
+
+      if (editingVocabIndex !== null) {
+        vocabData[editingVocabIndex] = vocabEntry;
+      } else {
+        vocabData.push(vocabEntry);
+      }
+
+      saveDraft();
+      showPage(1);
+      loadVocabList(vocabData);
+    }
+
+    function isDraftModified() {
+      const currentId = sessionStorage.getItem("editingProjectId");
+      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      const currentDraft = drafts.find(p => p.id === currentId);
+      if (!originalDraft || !currentDraft) return false;
+
+      return originalDraft !== JSON.stringify(currentDraft);
+    }
+
+    function returnPage() {
+      if (isDraftModified()) {
+        if (confirm("您有未保存的更改，确定要离开吗？")) {
+          window.location.href = "projects.html";
+        }
+      } else window.location.href = "projects.html";
+    }
 </script>
 
 </html>

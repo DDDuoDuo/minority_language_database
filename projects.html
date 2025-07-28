@@ -192,7 +192,7 @@
     }
 
     .pagination-container {
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       margin-top: 16px;
@@ -245,7 +245,7 @@
   <div class="my-projects-container">
     <div class="my-projects-header">
       <h2>我的项目列表</h2>
-      <button class="new-project-button" id="newProjectBtn">新建项目</button>
+      <button type="button" class="new-project-button" id="newProjectBtn">新建项目</button>
     </div>
 
     <div class="project-table-wrapper">
@@ -263,13 +263,14 @@
         </thead>
         <tbody></tbody>
       </table>
+      
       <div id="noProjects">暂无项目</div>
     </div>
 
     <div class="pagination-container">
-      <button id="prevPage" class="page-btn">←</button>
+      <button type="button" id="prevPage" class="page-btn">←</button>
       <span id="pageIndicator">第 1 页</span>
-      <button id="nextPage" class="page-btn">→</button>
+      <button type="button" id="nextPage" class="page-btn">→</button>
     </div>
   </div>
 </body>
@@ -321,7 +322,7 @@
 
         document.addEventListener("click", (e) => {
             if (!profileImg.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.style.display = "none";
+              dropdown.style.display = "none";
             }
         });
     }
@@ -330,11 +331,11 @@
 
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
+      logoutBtn.addEventListener("click", () => {
         sessionStorage.removeItem("isLoggedIn");
         alert("已退出登录");
         location.reload();
-        });
+      });
     }
 
     document.getElementById("prevPage").addEventListener("click", () => {
@@ -367,6 +368,7 @@
 
     drafts.slice(start, start + pageSize).forEach((draft, index) => {
       const tr = document.createElement("tr");
+      
       tr.innerHTML = `
         <td>${draft.projectName || "未命名项目"}</td>
         <td>--</td>
@@ -375,10 +377,11 @@
         <td>${userName}</td>
         <td>${draft.createdAt || "--"}</td>
         <td>
-          <button class="edit-button" data-id="${draft.id}">编辑</button>
-          <button class="delete-button" data-id="${draft.id}">删除</button>
+          <button type="button" class="edit-button" data-id="${draft.id}">编辑</button>
+          <button type="button" class="delete-button" data-id="${draft.id}">删除</button>
         </td>
       `;
+
       tbody.appendChild(tr);
     });
 

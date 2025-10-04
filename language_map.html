@@ -1,5 +1,7 @@
 <html lang="zh">
 <head>
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js"></script>
   <meta charset="UTF-8">
   <title>词汇</title>
   <style>
@@ -57,79 +59,23 @@
     }
 
     .profile {
-      display: flex;
-      align-items: center;
+        display: flex;
+        align-items: center;
+        margin-right: 75px;
+        gap: 16px;
+        cursor: pointer;
     }
     
     .profile img {
-      height: 40px;
-      border-radius: 50%;
-      margin-right: 120px;
-      cursor: pointer;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
     }
 
-    .overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-
-    .login-popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: white;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      border-radius: 10px;
-      z-index: 1000;
-      width: 300px;
-      text-align: center;
-    }
-
-    .login-popup h2 {
-      margin: 0 0 10px;
-    }
-
-    .login-popup button {
-      background-color: #0073e6;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .login-popup .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .login-popup input {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .close-icon {
-      width: 25px;
-      height: 25px;
+    .profile-name {
+        color: gray;
+        font-size: 16px;
+        user-select: none;
     }
 
     .dropdown-menu {
@@ -175,7 +121,7 @@
 
     .map-title {
         text-align: center;
-        font-size: 20px;
+        font-size: 22px;
         font-weight: bold;
         margin-top: 40px;
         color: #333;
@@ -191,9 +137,9 @@
     .project-list-title {
         max-width: 1200px;
         margin: 40px auto 10px;
-        font-size: 18px;
+        font-size: 22px;
         font-weight: bold;
-        color: #222;
+        color: #333;
     }
 
     .project-list-container {
@@ -235,7 +181,7 @@
     <div class="menu">
       <nav>
         <ul>
-          <li><a href="#">首页</a></li>
+          <li><a href="index.html">首页</a></li>
           <li><a href="language_map.html" class="active">词汇</a></li>
           <li><a href="#">贡献者</a></li>
         </ul>
@@ -243,7 +189,8 @@
     </div>
 
     <div class="profile" id="profile">
-        <img id="profileImg" src="img/profile.png" alt="头像">
+      <img id="profileImg" src="img/profile.png" alt="头像">
+      <span id="profileName" class="profile-name">登录</span>
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
@@ -252,18 +199,6 @@
         <button class="dropdown-link" id="logoutBtn">退出登录</button>
     </div>
   </header>
-
-  <div class="overlay"></div>
-
-  <div class="login-popup">
-    <button class="close-btn" onclick="closePopup()">
-      <img src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-close-512.png" alt="关闭" class="close-icon">
-    </button>
-    <h2>登陆账号</h2>
-    <input type="email" placeholder="邮箱" />
-    <input type="password" placeholder="密码" />
-    <button onclick="submitLogin()">登录</button>
-  </div>
 
   <div class="map-title">中国少数民族语言分布地图</div>
   
@@ -290,51 +225,26 @@
 </body>
 
 <script>
-  function showLoginPopup() {
-    document.querySelector('.overlay').style.display = 'block';
-    document.querySelector('.login-popup').style.display = 'block';
-  }
-
-  function closePopup() {
-    document.querySelector('.overlay').style.display = 'none';
-    document.querySelector('.login-popup').style.display = 'none';
-  }
-
-  function submitLogin() {
-    const email = document.querySelector('input[type="email"]').value.trim();
-    const password = document.querySelector('input[type="password"]').value.trim();
-
-    if (!email || !password) {
-        alert("请输入账户或密码！");
-        return;
-    }
-
-    sessionStorage.setItem("isLoggedIn", "true");
-
-    closePopup();
-
-    setupProfileMenu();
-  }
-
   document.addEventListener("DOMContentLoaded", () => {
-    function setupProfileMenu() {
-        const profileImg = document.getElementById("profileImg");
-        const dropdown = document.getElementById("dropdownMenu");
+    Auth.init();
+    Auth.bindProfileName('#profileName');
 
-        if (!profileImg || !dropdown) return;
-
-        profileImg.onclick = () => {
-            if (sessionStorage.getItem("isLoggedIn") === "true") {
-                dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
-            } else {
-                showLoginPopup();
-            }
-        };
+    const profile = document.getElementById("profile");
+    const dropdown = document.getElementById("dropdownMenu");
+    if (profile && dropdown) {
+        profile.addEventListener('click', () => {
+        if (Auth.isLoggedIn()) {
+            dropdown.style.display = (dropdown.style.display === "none" || !dropdown.style.display)
+            ? "block" : "none";
+        } else {
+            Auth.showLogin();
+        }
+        });
 
         document.addEventListener("click", (e) => {
-            if (!profileImg.contains(e.target) && !dropdown.contains(e.target)) {
+        if (!profile.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.style.display = "none";
-            }
+        }
         });
     }
 
@@ -349,7 +259,6 @@
 
     const tableBody = document.getElementById("project-table-body");
 
-    // 示例项目数据
     const exampleProject = {
         name: "哈萨克语-新疆项目",
         wordCount: 2100,
@@ -371,8 +280,6 @@
         <td>${exampleProject.action}</td>
     `;
     tableBody.appendChild(tr);
-
-    setupProfileMenu();
  });
 </script>
 

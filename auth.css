@@ -1,0 +1,113 @@
+.auth-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+  
+.auth-modal {
+    background: #fff;
+    width: min(480px, 92vw);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    overflow: hidden;
+    font-size: 14px;
+}
+
+.auth-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.auth-title { 
+    font-size: 18px; 
+    font-weight: 700;
+}
+
+.auth-close {
+    border: 0; 
+    background: transparent;
+    cursor: pointer; 
+    font-size: 18px; 
+}
+
+.auth-body {
+    padding: 16px 20px;
+    display: grid; 
+    gap: 12px;
+}
+
+.auth-row { 
+    display: grid;
+    gap: 6px; 
+}
+
+.auth-row label { 
+    color: #555; 
+    font-weight: 600; 
+}
+
+.auth-input {
+    padding: 10px 12px;
+    border: 1px solid #ccc; 
+    border-radius: 8px;
+    outline: none;
+}
+
+.auth-input:focus { 
+    border-color: #0073e6; 
+}
+
+.auth-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #eee;
+    display: flex; 
+    gap: 12px; 
+    justify-content: flex-end;
+}
+  
+.auth-btn {
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer;
+    padding: 10px 16px; font-weight: 600;
+}
+
+.auth-btn.primary {
+    background: #0073e6;
+    color: #fff;
+}
+
+.auth-btn.secondary {
+    background: #efefef;
+    color: #333;
+}
+  
+.auth-backdrop.is-open {
+    display: flex;
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    margin-right: 75px;
+    gap: 16px;
+    cursor: pointer;
+}
+
+.profile img {
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.profile-name {
+    color: gray;
+    font-size: 16px;
+    user-select: none;
+}

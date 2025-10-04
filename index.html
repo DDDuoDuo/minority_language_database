@@ -1,3 +1,313 @@
+<html lang="zh">
 <head>
-    <meta http-equiv='refresh' content='0; URL=language_map.html'>
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js"></script>
+  <meta charset="UTF-8">
+  <title>少数民族语言数据库</title>
+  <style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    header {
+        background-color: white;
+        color: black;
+        padding: 20px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+    }
+
+    .logo img {
+        height: 50px;
+    }
+
+    .menu {
+        display: flex;
+        align-items: center;
+    }
+
+    .menu ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 20px;
+    }
+
+    .menu ul li {
+        font-size: 18px;
+    }
+
+    .menu ul li a {
+        text-decoration: none;
+        color: black;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+    
+    .menu ul li a.active {
+        background-color: #0073e6;
+        color: white;
+    }
+
+    .profile {
+        display: flex;
+        align-items: center;
+        margin-right: 75px;
+        gap: 16px;
+        cursor: pointer;
+    }
+    
+    .profile img {
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .profile-name {
+        color: gray;
+        font-size: 16px;
+        user-select: none;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 70px;
+        right: 190px;
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        width: 140px;
+        z-index: 9999;
+        overflow: hidden;
+    }
+
+    .dropdown-menu a {
+        display: block;
+        padding: 10px 16px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .dropdown-menu a:hover {
+        background-color: #f0f0f0;
+    }
+
+    .dropdown-menu button.dropdown-link {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .dropdown-menu button.dropdown-link:hover {
+        background-color: #f0f0f0;
+    }
+
+    .home-container {
+        width: 85%;
+        margin: 0 auto 80px;
+        text-align: center;
+    }
+
+    .home-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 40px;
+        color: #333;
+    }
+
+    .home-subtitle {
+        font-size: 24px;
+        margin-top: 60px;
+        color: #333;
+    }
+
+    .home-text {
+        font-size: 18px;
+        color: #555;
+        margin-bottom: 40px;
+    }
+
+    .home-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 80px;
+        margin-bottom: 50px;
+    }
+
+    .home-buttons button {
+        background-color: #0073e6;
+        color: white;
+        border: none;
+        padding: 22px 40px;
+        font-size: 18px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .home-buttons button:hover {
+        background-color: #005bb5;
+    }
+
+    .home-background img {
+        width: 100%;
+        max-width: 1200px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        margin: 40px 0;
+    }
+
+    .more-info {
+        text-align: left;
+        max-width: 850px;
+        margin: 0 auto;
+        line-height: 1.8;
+    }
+
+    .more-info h3 {
+        font-size: 22px;
+        color: #333;
+        margin-top: 40px;
+    }
+  </style>
 </head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="img/EdUHK_logo.png" href="index.html" alt="香港教育大学 Logo">
+    </div>
+
+    <div class="menu">
+      <nav>
+        <ul>
+          <li><a href="index.html" class="active">首页</a></li>
+          <li><a href="language_map.html">词汇</a></li>
+          <li><a href="#">贡献者</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="profile" id="profile">
+        <img id="profileImg" src="img/profile.png" alt="头像">
+        <span id="profileName" class="profile-name">登录</span>
+    </div>
+
+    <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
+        <a href="#">我的账户</a>
+        <a href="projects.html">管理项目</a>
+        <button class="dropdown-link" id="logoutBtn">退出登录</button>
+    </div>
+  </header>
+
+  <div class="home-container">
+    <div class="home-title">
+        <h1>中国少数民族语言分化时间数据库</h1>
+    </div>
+    
+    <div class="more-info">
+        <p>
+            中国少数民族语言分化时间数据库是一个科学数据库，旨在利用词汇证据和比较语言学方法，收集汉藏语系内部语言与方言分化的时间信息。
+            该数据库提供来自多种汉藏语系语言的词汇证据，包含关于分化时间与同源词关系的全面信息。用户可以通过该数据库追踪语言分化过程、重建祖语形式，并比较语系不同分支的分化模式。
+        </p>
+        <p>
+            数据库中收录的词汇与语言数量会逐步增加，随着更多研究者的加入而不断扩展。每个数据集均由相关语言及其历史发展的专家贡献。
+            方言分化时间数据库 由多位研究者或研究团队提供的词汇数据集组成。引用数据库资料时，请注明相应的贡献者及本项目。
+            数据库可按语言、时间段、词汇对应关系或贡献者进行检索与访问。
+        </p>
+        <p>
+            该数据库由香港教育大学语言学系主持开发与维护，旨在为语言学研究者和爱好者提供一个共享与交流的平台。
+        </p>
+    </div>
+
+    <h2 class="home-subtitle">探索与贡献</h2>
+    <p class="home-text">
+      您可以通过以下方式进入数据库，浏览研究成果或录入新数据
+    </p>
+    <div class="home-buttons">
+      <button id="exploreBtn">查询研究</button>
+      <button id="contributeBtn">录入研究</button>
+    </div>
+
+    <div class="home-background">
+      <img src="img/background.png" alt="背景图">
+    </div>
+
+    <div class="more-info">
+      <h3>什么是语言学？</h3>
+      <p>
+        语言学是研究语言结构、发展、变化与使用的科学。通过比较语言学的方法，
+        我们可以重建古代语言形式，揭示人类文化和迁徙的历史轨迹。
+      </p>
+      <p>
+        本项目结合考古学、历史学与语言学的证据，为研究者提供一个跨学科的数据平台。
+      </p>
+    </div>
+  </div>
+</body>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    Auth.init();
+    Auth.bindProfileName('#profileName');
+
+    const profile = document.getElementById("profile");
+    const dropdown = document.getElementById("dropdownMenu");
+    if (profile && dropdown) {
+        profile.addEventListener('click', () => {
+        if (Auth.isLoggedIn()) {
+            dropdown.style.display = (dropdown.style.display === "none" || !dropdown.style.display)
+            ? "block" : "none";
+        } else {
+            Auth.showLogin();
+        }
+        });
+
+        document.addEventListener("click", (e) => {
+        if (!profile.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
+        }
+        });
+    }
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+        sessionStorage.removeItem("isLoggedIn");
+        alert("已退出登录");
+        location.reload();
+        });
+    }
+
+    document.getElementById("exploreBtn").addEventListener("click", () => {
+        window.location.href = "language_map.html";
+    });
+
+    document.getElementById("contributeBtn").addEventListener("click", () => {
+        if (sessionStorage.getItem("isLoggedIn") === "true") {
+            window.location.href = "projects.html";
+        } else {
+            showLoginPopup();
+        }
+    });
+ });
+</script>
+
+</html>

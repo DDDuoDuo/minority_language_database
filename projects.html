@@ -1,5 +1,7 @@
 <html lang="zh">
 <head>
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js"></script>
   <meta charset="UTF-8">
   <title>项目管理</title>
   <style>
@@ -57,15 +59,23 @@
     }
 
     .profile {
-      display: flex;
-      align-items: center;
+        display: flex;
+        align-items: center;
+        margin-right: 75px;
+        gap: 16px;
+        cursor: pointer;
     }
     
     .profile img {
-      height: 40px;
-      border-radius: 50%;
-      margin-right: 120px;
-      cursor: pointer;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .profile-name {
+        color: gray;
+        font-size: 16px;
+        user-select: none;
     }
 
     .dropdown-menu {
@@ -123,6 +133,7 @@
       line-height: 1.8;
       color: #333;
     }
+    
     .my-projects-container {
       max-width: 1000px;
       margin: 40px auto;
@@ -216,7 +227,7 @@
     <div class="menu">
       <nav>
         <ul>
-          <li><a href="#">首页</a></li>
+          <li><a href="index.html">首页</a></li>
           <li><a href="language_map.html" class="active">词汇</a></li>
           <li><a href="#">贡献者</a></li>
         </ul>
@@ -225,6 +236,7 @@
 
     <div class="profile" id="profile">
       <img id="profileImg" src="img/profile.png" alt="头像">
+      <span id="profileName" class="profile-name">登录</span>
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
@@ -276,21 +288,6 @@
 </body>
 
 <script>
-  function showLoginPopup() {
-    document.querySelector('.overlay').style.display = 'block';
-    document.querySelector('.login-popup').style.display = 'block';
-  }
-
-  function closePopup() {
-    document.querySelector('.overlay').style.display = 'none';
-    document.querySelector('.login-popup').style.display = 'none';
-  }
-
-  function submitLogin() {
-    alert('登录成功！');
-    closePopup();
-  }
-
   const userName = "梁仁隽";
 
   let currentPage = 1;
@@ -299,35 +296,30 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     if (sessionStorage.getItem("isLoggedIn") !== "true") {
-      window.location.href = "language_map.html";
+      window.location.href = "index.html";
       return;
     }
 
     const userNameSpan = document.getElementById("username");
     if (userNameSpan) userNameSpan.textContent = userName;
 
-    function setupProfileMenu() {
-        const profileImg = document.getElementById("profileImg");
-        const dropdown = document.getElementById("dropdownMenu");
+    Auth.init();
+    Auth.bindProfileName('#profileName');
 
-        if (!profileImg || !dropdown) return;
-
-        profileImg.onclick = () => {
-            if (sessionStorage.getItem("isLoggedIn") === "true") {
-              dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
-            } else {
-              window.location.href = "language_map.html";
-            }
-        };
+    const profile = document.getElementById("profile");
+    const dropdown = document.getElementById("dropdownMenu");
+    if (profile && dropdown) {
+        profile.addEventListener('click', () => {
+          dropdown.style.display = (dropdown.style.display === "none" || !dropdown.style.display)
+          ? "block" : "none";
+        });
 
         document.addEventListener("click", (e) => {
-            if (!profileImg.contains(e.target) && !dropdown.contains(e.target)) {
-              dropdown.style.display = "none";
-            }
+        if (!profile.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
+        }
         });
     }
-
-    setupProfileMenu();
 
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {

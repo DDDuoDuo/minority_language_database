@@ -229,14 +229,14 @@
         <ul>
           <li><a href="index.html">首页</a></li>
           <li><a href="language_map.html" class="active">词汇</a></li>
-          <li><a href="#">贡献者</a></li>
+          <li><a href="contribute.html">贡献者</a></li>
         </ul>
       </nav>
     </div>
 
     <div class="profile" id="profile">
       <img id="profileImg" src="img/profile.png" alt="头像">
-      <span id="profileName" class="profile-name">登录</span>
+      <span class="profile-name" id="userStatus">登录</span>
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
@@ -247,7 +247,7 @@
   </header>
 
   <div class="welcome-container">
-    <h1>欢迎，<span id="username"></span>教授</h1>
+    <h1>欢迎，<span id="profile-name"></span></h1>
   </div>
 
   <div class="project-description">
@@ -288,23 +288,23 @@
 </body>
 
 <script>
-  const userName = "梁仁隽";
-
   let currentPage = 1;
   const pageSize = 5;
   let totalPages = 1;
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (sessionStorage.getItem("isLoggedIn") !== "true") {
-      window.location.href = "index.html";
+    if (!Auth.isLoggedIn()) {
+      window.location.href = "index.html?login=true";
       return;
     }
 
-    const userNameSpan = document.getElementById("username");
-    if (userNameSpan) userNameSpan.textContent = userName;
+    Auth.init('#userStatus');
+    Auth.bindProfileName('#userStatus');
 
-    Auth.init();
-    Auth.bindProfileName('#profileName');
+    const userNameSpan = document.getElementById("profile-name");
+    const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    const userName = (cu && cu.username) || sessionStorage.getItem("username") || "未知用户";
+    if (userNameSpan) userNameSpan.textContent = userName;
 
     const profile = document.getElementById("profile");
     const dropdown = document.getElementById("dropdownMenu");
@@ -324,7 +324,7 @@
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
-        sessionStorage.removeItem("isLoggedIn");
+        Auth.logout();
         alert("已退出登录");
         location.reload();
       });
@@ -360,13 +360,16 @@
 
     drafts.slice(start, start + pageSize).forEach((draft, index) => {
       const tr = document.createElement("tr");
+      const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+      const userName = (cu && cu.username) || sessionStorage.getItem("username") || "未知用户";
+      const authorName = draft.author || userName;
       
       tr.innerHTML = `
         <td>${draft.projectName || "未命名项目"}</td>
+        <td>${(draft.vocabList)? draft.vocabList.length : 0}</td>
         <td>--</td>
         <td>--</td>
-        <td>--</td>
-        <td>${userName}</td>
+        <td>${authorName}</td>
         <td>${draft.createdAt || "--"}</td>
         <td>
           <button type="button" class="edit-button" data-id="${draft.id}">编辑</button>

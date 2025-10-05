@@ -1,5 +1,7 @@
 <html lang="zh">
 <head>
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js"></script>
   <meta charset="UTF-8">
   <title>新建项目</title>
   <style>
@@ -719,14 +721,6 @@
         <div class="vocab-table-header-left">
           <h2>当前词汇：</h2>
           <h2 id="currentWordDisplay">暂无词汇</h2>
-          <!-- <h2>&nbsp;&nbsp;&nbsp;</h2>
-          <div class="syllable-word-selection">
-            <select id="syllableSelect">
-              <option value="1">第一音节</option>
-              <option value="2">第二音节</option>
-              <option value="3">第三音节</option>
-            </select>
-          </div> -->
         </div>
 
         <button type="button" class="new-vocab-button" id="addColumnBtn">添加方言</button>
@@ -1010,6 +1004,9 @@
 
     let originalDraft = null;
 
+    Auth.init('#userStatus');
+    Auth.bindProfileName('#userStatus');
+
     function updateRemoveButtons() {
       const removeBtns = document.querySelectorAll(".remove-language");
       removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
@@ -1036,6 +1033,11 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+        if (!Auth.isLoggedIn()) {
+        window.location.href = "index.html?login=true";
+        return;
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       let projectId = urlParams.get("id");
 
@@ -1292,13 +1294,11 @@
 
       window.collectSyllablesFromPage2 = function collectSyllablesFromPage2() {
         const displayEl = document.getElementById('currentWordDisplay');
-        // const selectEl = document.getElementById('syllableSelect');
         const tbody = document.getElementById('wordBody');
 
         if (!displayEl || !tbody) return null;
 
         const word = displayEl.textContent.trim();
-        // const syllable = parseInt(selectEl.value, 10) || 1;
         const rows = Array.from(tbody.querySelectorAll('tr'));
 
         const wordForms = rows.map(row => {
@@ -1366,18 +1366,12 @@
       window.populateSyllablePage = function populateSyllablePage(word, wordData) {
         const wordBody = document.getElementById("wordBody");
         const wordLabel = document.getElementById("currentWordDisplay");
-        // const syllSel = document.getElementById("syllableSelect");
 
         if (!wordBody || !wordLabel) return;
 
         wordLabel.textContent = word || "暂无词汇";
 
         if (wordData === "1") return;
-
-        // const savedSyllable = (wordData && typeof wordData.syllable !== "undefined")
-        //   ? Number(wordData.syllable) || 1
-        //   : 1;
-        // syllSel.value = String(savedSyllable);
 
         const savedMap = new Map();
         if (Array.isArray(wordData?.wordForms)) {
@@ -2317,6 +2311,9 @@
     }
 
     window.saveVocab = function saveVocab() {
+      const loggedUser = JSON.parse(sessionStorage.getItem("loggedUser") || "{}");
+      const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+      const authorName = (cu && cu.username) || sessionStorage.getItem("username") || "未知用户";
       const category = document.querySelector('input[name="category"]:checked')?.value;
       const word = getSelectedWord();
 
@@ -2395,7 +2392,8 @@
           upperEra: timePack.upperEra
         } ?? prev?.timeInfo ?? null),
         evidence : evidenceCsvDataUrl,
-        recordedAt: prev?.recordedAt ?? new Date().toLocaleString()
+        recordedAt: prev?.recordedAt ?? new Date().toLocaleString(),
+        author: prev?.author ?? authorName
       };
 
       if (editingVocabIndex !== null) {

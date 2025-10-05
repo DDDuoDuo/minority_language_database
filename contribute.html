@@ -1,0 +1,190 @@
+<html lang="zh">
+<head>
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js"></script>
+  <meta charset="UTF-8">
+  <title>少数民族语言数据库</title>
+  <style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    header {
+        background-color: white;
+        color: black;
+        padding: 20px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+    }
+
+    .logo img {
+        height: 50px;
+    }
+
+    .menu {
+        display: flex;
+        align-items: center;
+    }
+
+    .menu ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 20px;
+    }
+
+    .menu ul li {
+        font-size: 18px;
+    }
+
+    .menu ul li a {
+        text-decoration: none;
+        color: black;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+    
+    .menu ul li a.active {
+        background-color: #0073e6;
+        color: white;
+    }
+
+    .profile {
+        display: flex;
+        align-items: center;
+        margin-right: 75px;
+        gap: 16px;
+        cursor: pointer;
+    }
+    
+    .profile img {
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .profile-name {
+        color: gray;
+        font-size: 16px;
+        user-select: none;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 70px;
+        right: 190px;
+        background-color: white;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        width: 140px;
+        z-index: 9999;
+        overflow: hidden;
+    }
+
+    .dropdown-menu a {
+        display: block;
+        padding: 10px 16px;
+        text-decoration: none;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .dropdown-menu a:hover {
+        background-color: #f0f0f0;
+    }
+
+    .dropdown-menu button.dropdown-link {
+        display: block;
+        width: 100%;
+        padding: 10px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .dropdown-menu button.dropdown-link:hover {
+        background-color: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+    <header>
+      <div class="logo">
+        <img src="img/EdUHK_logo.png" href="index.html" alt="香港教育大学 Logo">
+      </div>
+  
+      <div class="menu">
+        <nav>
+          <ul>
+            <li><a href="index.html">首页</a></li>
+            <li><a href="language_map.html">词汇</a></li>
+            <li><a href="contribute.html" class="active">贡献者</a></li>
+          </ul>
+        </nav>
+      </div>
+  
+      <div class="profile" id="profile">
+          <img id="profileImg" src="img/profile.png" alt="头像">
+          <span class="profile-name" id="userStatus">登录</span>
+      </div>
+  
+      <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
+          <a href="#">我的账户</a>
+          <a href="projects.html">管理项目</a>
+          <button class="dropdown-link" id="logoutBtn">退出登录</button>
+      </div>
+    </header>
+
+    <div id="authContainer"></div>
+</body>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      Auth.init('#userStatus');
+      Auth.bindProfileName('#userStatus');
+  
+      const profile = document.getElementById("profile");
+      const dropdown = document.getElementById("dropdownMenu");
+      if (profile && dropdown) {
+          profile.addEventListener('click', () => {
+          if (Auth.isLoggedIn()) {
+              dropdown.style.display = (dropdown.style.display === "none" || !dropdown.style.display)
+              ? "block" : "none";
+          } else {
+              Auth.showLogin();
+          }
+          });
+  
+          document.addEventListener("click", (e) => {
+              if (!profile.contains(e.target) && !dropdown.contains(e.target)) {
+                  dropdown.style.display = "none";
+              }
+          });
+      }
+  
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+          logoutBtn.addEventListener("click", () => {
+              Auth.logout();
+              alert("已退出登录");
+              location.reload();
+          });
+      }
+    });
+</script>
+  
+</html>

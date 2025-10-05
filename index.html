@@ -200,14 +200,14 @@
         <ul>
           <li><a href="index.html" class="active">首页</a></li>
           <li><a href="language_map.html">词汇</a></li>
-          <li><a href="#">贡献者</a></li>
+          <li><a href="contribute.html">贡献者</a></li>
         </ul>
       </nav>
     </div>
 
     <div class="profile" id="profile">
         <img id="profileImg" src="img/profile.png" alt="头像">
-        <span id="profileName" class="profile-name">登录</span>
+        <span class="profile-name" id="userStatus">登录</span>
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
@@ -259,14 +259,23 @@
       <p>
         本项目结合考古学、历史学与语言学的证据，为研究者提供一个跨学科的数据平台。
       </p>
+
+      <h3>为什么要建立数据库？</h3>
+      <p>
+        我们致力于通过收集自带时间信息的词汇数据，通过历史比较的方法，
+        推断汉藏语言或者方言的分化时间，并追踪可能的人类迁移路径，
+        建立开放共享的词汇数据库，开展语言演化研究。
+      </p>
     </div>
   </div>
+
+  <div id="authContainer"></div>
 </body>
 
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    Auth.init();
-    Auth.bindProfileName('#profileName');
+    Auth.init('#userStatus');
+    Auth.bindProfileName('#userStatus');
 
     const profile = document.getElementById("profile");
     const dropdown = document.getElementById("dropdownMenu");
@@ -281,18 +290,18 @@
         });
 
         document.addEventListener("click", (e) => {
-        if (!profile.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.style.display = "none";
-        }
+            if (!profile.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
         });
     }
 
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-        sessionStorage.removeItem("isLoggedIn");
-        alert("已退出登录");
-        location.reload();
+            Auth.logout();
+            alert("已退出登录");
+            location.reload();
         });
     }
 
@@ -301,13 +310,16 @@
     });
 
     document.getElementById("contributeBtn").addEventListener("click", () => {
-        if (sessionStorage.getItem("isLoggedIn") === "true") {
-            window.location.href = "projects.html";
-        } else {
-            showLoginPopup();
-        }
+        Auth.requireLogin(() => { window.location.href = "projects.html"; });
     });
- });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("login") === "true" && !Auth.isLoggedIn()) {
+        if (typeof Auth !== "undefined" && Auth.showLogin) {
+            setTimeout(() => Auth.showLogin(), 300);
+        }
+    }
+  });
 </script>
 
 </html>

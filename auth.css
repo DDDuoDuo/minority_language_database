@@ -1,96 +1,76 @@
-.auth-backdrop {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: none;
-    align-items: center;
+.auth-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
 }
   
-.auth-modal {
-    background: #fff;
-    width: min(480px, 92vw);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    overflow: hidden;
-    font-size: 14px;
+.auth-box {
+    background: white;
+    padding: 30px 40px;
+    border-radius: 8px;
+    text-align: center;
+    width: 350px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+  
+.auth-box input {
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+  
+.auth-box-button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 12px;
+    background: #0073e6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+  
+.auth-box-button:hover {
+    background: #005bb5;
 }
 
-.auth-header {
-    padding: 16px 20px;
+.auth-box-header {
     border-bottom: 1px solid #eee;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-.auth-title { 
-    font-size: 18px; 
-    font-weight: 700;
-}
-
 .auth-close {
     border: 0; 
     background: transparent;
     cursor: pointer; 
-    font-size: 18px; 
-}
-
-.auth-body {
-    padding: 16px 20px;
-    display: grid; 
-    gap: 12px;
-}
-
-.auth-row { 
-    display: grid;
-    gap: 6px; 
-}
-
-.auth-row label { 
-    color: #555; 
-    font-weight: 600; 
-}
-
-.auth-input {
-    padding: 10px 12px;
-    border: 1px solid #ccc; 
-    border-radius: 8px;
-    outline: none;
-}
-
-.auth-input:focus { 
-    border-color: #0073e6; 
-}
-
-.auth-footer {
-    padding: 14px 20px;
-    border-top: 1px solid #eee;
-    display: flex; 
-    gap: 12px; 
-    justify-content: flex-end;
+    font-size: 24px; 
 }
   
-.auth-btn {
-    border: none; 
-    border-radius: 8px; 
-    cursor: pointer;
-    padding: 10px 16px; font-weight: 600;
-}
-
-.auth-btn.primary {
-    background: #0073e6;
-    color: #fff;
-}
-
-.auth-btn.secondary {
-    background: #efefef;
-    color: #333;
+.error-msg {
+    color: red;
+    font-size: 13px;
+    margin-top: 4px;
 }
   
-.auth-backdrop.is-open {
-    display: flex;
+.hidden {
+    display: none;
 }
+  
+.switch-text {
+    margin-top: 10px;
+    font-size: 14px;
+}  
 
 .profile {
     display: flex;

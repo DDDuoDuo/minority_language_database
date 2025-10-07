@@ -620,7 +620,7 @@
         <li><strong><u>如何选择自带信息的词</u>：A. 新概念词：</strong>反映人类文明发展节点（如石铜铁的使用、作物引进等），
           其产生/传播时间可通过考古学和历史学确定，这类词汇如同语言中的"时间胶囊"，
           为语言演变研究提供客观的年代参照系。<strong>B. 借词：</strong>通过有记录的音韵特征可追溯借入年代，特别是汉语借词、藏语借词、缅语借词等。</li>
-        <li><strong><u>不适合用作证据的词</u>：</strong>用固有概念表达新概念的情况，如用四川彝语用<strong>花椒（固有词）</strong>表达<strong>辣椒（外来物种）</strong>，但发生了词汇创新的情况例外。</li>
+        <li><strong><u>不适合用作证据的词</u>：</strong>用固有概念表达新概念的情况，如四川彝语用<strong>花椒（固有词）</strong>表达<strong>辣椒（外来物种）</strong>，但发生了词汇创新的情况例外。</li>
         <li><strong><u>用于断代的时间参考</u>：</strong>本数据库根据文献资料提供了一些时间参考，贡献者可以根据自己对时间上下限更精准的掌握进行调整。可供参考的时间包括：
           <strong>上古汉语（1556 BC - 266）、中古汉语（266 - 1279）、近代汉语（1279 - 1912）、现代汉语 (1912以后)；或者中国朝代断代。</strong></li>
         <li><strong><u>需将词汇分为不同的历史层次</u>：早期、中期、后期。</strong>贡献者可根据词汇所处的具体历史时期进行归类，核心原则是确保各层次间的相对时间顺序正确。
@@ -698,6 +698,7 @@
         <label><input type="radio" name="category" value="水果"> 水果</label><br>
         <label><input type="radio" name="category" value="家畜"> 家畜</label><br>
         <label><input type="radio" name="category" value="外来文化概念"> 外来文化概念</label>
+        <label><input type="radio" name="category" value="其他"> 其他</label>
       </div>
     </div>
     
@@ -779,12 +780,12 @@
           </div>
           <br><br>
           <label>
-            <input type="radio" name="relaxedType" value="branchOnly">
+            <input type="radio" name="relaxedType" value="crossBranch">
             是，即在本词项上发生不完全对应的语言仅存在于谱系树的同一分支内，不同分支之间仍能形成完全和普遍对应
           </label>
           <br><br>
           <label>
-            <input type="radio" name="relaxedType" value="crossBranch">
+            <input type="radio" name="relaxedType" value="branchOnly">
             否，即在本词项上发生不完全对应的语言不仅存在于谱系树的同一分支内，而且也存在于谱系树的不同分支内
           </label>
 
@@ -889,7 +890,7 @@
       </div>
       
       <div class="radio-row">
-        <div class="radio-label">与姐妹语言同源：
+        <div class="radio-label">与近源姐妹语言同源：
           <span class="help-tip" aria-label="help">
             <img src="img/question.png" alt="问号">
             <span class="tooltip">
@@ -1270,29 +1271,60 @@
         populateSyllablePage(null, null);
       });
 
-      const wordOptions = {
-        "工具质料": ["石", "铜", "铁", "木", "骨", "牙", "金", "锡", "银"],
-        "禾谷类作物": ["稻", "小麦", "玉米"],
-        "蔬菜": ["白菜", "萝卜"],
-        "水果": ["苹果", "梨"],
-        "家畜": ["牛", "羊"],
-        "外来文化概念": ["佛", "汉字", "钱币"]
-      };
+      let wordOptions = {};
+
+      fetch("word_options.csv")
+        .then(res => res.text())
+        .then(text => {
+          const lines = text.split(/\r?\n/).filter(l => l.trim());
+          lines.forEach(line => {
+            const [cat, word] = line.split(",");
+            if (!cat || !word) return;
+            if (!wordOptions[cat]) wordOptions[cat] = [];
+            wordOptions[cat].push(word);
+          });
+        })
+        .catch(err => console.error("无法加载词表 CSV:", err));
 
       document.querySelectorAll('input[name="category"]').forEach(radio => {
         radio.addEventListener('change', function () {
           const selectedCategory = this.value;
-          const wordList = wordOptions[selectedCategory] || [];
-          const wordListGroup = document.getElementById("wordListGroup");
-
           const wordSelect = document.getElementById("wordSelect");
-          wordSelect.innerHTML = `<option value="">请选择词汇</option>`;
+          wordSelect.innerHTML = "";
 
-          wordList.forEach(word => {
+          if (selectedCategory === "其他") {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.id = "customWordInput";
+            input.placeholder = "请输入词汇";
+            input.className = "custom-word-input";
+            wordSelect.replaceWith(input);
+            input.addEventListener("input", () => {
+              window.selectedWord = input.value.trim();
+            });
+            return;
+          }
+
+          if (wordSelect.tagName.toLowerCase() !== "select") {
+            const newSelect = document.createElement("select");
+            newSelect.id = "wordSelect";
+            newSelect.innerHTML = `<option value="">请选择词汇</option>`;
+            const container = document.querySelector("#wordSelect").parentElement || document.body;
+            container.replaceChild(newSelect, document.getElementById("customWordInput"));
+          }
+
+          const list = wordOptions[selectedCategory] || [];
+          const sel = document.getElementById("wordSelect");
+          sel.innerHTML = `<option value="">请选择词汇</option>`;
+          list.forEach(word => {
             const opt = document.createElement("option");
             opt.value = word;
             opt.textContent = word;
-            wordSelect.appendChild(opt);
+            sel.appendChild(opt);
+          });
+
+          sel.addEventListener("change", () => {
+            window.selectedWord = sel.value.trim();
           });
         });
       });
@@ -2407,7 +2439,7 @@
       } else if (matchVal === 'partial') {
         fullMatch = false;
         partialMatch = true;
-        relaxedMatch = (relaxedVal === 'branchOnly');
+        relaxedMatch = (relaxedVal === 'crossBranch');
       }
 
       let inferredOrigin = null;

@@ -133,6 +133,7 @@
 
     .guidelines {
       margin-bottom: 40px;
+      line-height: 1.8;
     }
 
     .guidelines h2 {
@@ -555,9 +556,10 @@
     <div class="guidelines">
       <h2>贡献者要求：</h2>
       <ol>
-        <li>具有目标语言词表，涵盖至少3个方言</li>
-        <li>每个方言要求2000词以上</li>
-        <li>谱系树</li>
+        <li>具有目标语言或者方言的比较词汇</li>
+        <li>包括至少2个目标语言或者方言</li>
+        <li>每个语言或者方言要求有2000词或者以上词表</li>
+        <li>需有一棵覆盖目标语言或者方言的参考谱系树</li>
       </ol>
     </div>
 
@@ -615,12 +617,16 @@
     <div class="guidelines">
       <h2>注意事项：</h2>
       <ol>
-        <li>自带时间信息的词：<strong>鸡、石、玉米</strong></li>
-        <li>不适合用作证据的词：<strong>XX</strong></li>
-        <li>用于断代的时间参考：<strong>上古汉语（1556 BC - 266）、中古汉语（266 - 1279）、近代汉语（1279 - 1912）</strong></li>
-        <li>需将词汇分为不同的历史层次：<strong>早期、中期、后期</strong></li>
-        <li>时间的上限和下限的确定</li>
-        <li>不要使用具有多义的固有词</li>
+        <li><strong><u>如何选择自带信息的词</u>：A. 新概念词：</strong>反映人类文明发展节点（如石铜铁的使用、作物引进等），
+          其产生/传播时间可通过考古学和历史学确定，这类词汇如同语言中的"时间胶囊"，
+          为语言演变研究提供客观的年代参照系。<strong>B. 借词：</strong>通过有记录的音韵特征可追溯借入年代，特别是汉语借词、藏语借词、缅语借词等。</li>
+        <li><strong><u>不适合用作证据的词</u>：</strong>用固有概念表达新概念的情况，如用四川彝语用<strong>花椒（固有词）</strong>表达<strong>辣椒（外来物种）</strong>，但发生了词汇创新的情况例外。</li>
+        <li><strong><u>用于断代的时间参考</u>：</strong>本数据库根据文献资料提供了一些时间参考，贡献者可以根据自己对时间上下限更精准的掌握进行调整。可供参考的时间包括：
+          <strong>上古汉语（1556 BC - 266）、中古汉语（266 - 1279）、近代汉语（1279 - 1912）、现代汉语 (1912以后)；或者中国朝代断代。</strong></li>
+        <li><strong><u>需将词汇分为不同的历史层次</u>：早期、中期、后期。</strong>贡献者可根据词汇所处的具体历史时期进行归类，核心原则是确保各层次间的相对时间顺序正确。
+          例如：前汉时期词汇（公元前-220年）、唐宋时期词汇（618-1279年）、明清时期词汇（1368-1912年）、或者两汉六朝时期词汇（公元前202年 - 公元589年）、
+          初唐时期词汇（公元618年 – 约公元712年）、晚唐初宋词汇（约公元836年 – 约公元1000年）。</li>
+        <li><strong><u>时间的上限和下限的确定</u>：</strong>寻找能证明某个现象在某个区域已经存在的最早的确凿证据、寻找能证明某个现象在某个区域仍然存在或开始消失的最晚的确凿证据。</li>
       </ol>
     </div>
 
@@ -868,7 +874,14 @@
     
     <div class="form-group match-section" id="etymologySection">
       <div class="radio-row">
-        <div class="radio-label">与施借语言可释：</div>
+        <div class="radio-label">与施借语言可释：
+          <span class="help-tip" aria-label="help">
+            <img src="img/question.png" alt="问号">
+            <span class="tooltip">
+              与施借语言可释，即一个被怀疑是借词的词语，其语音演变过程必须能够用施借语言的语音体系和发展规律来合理解释。
+            </span>
+          </span>
+        </div>
         <div class="radio-options" id="explainableOptions">
           <label><input type="radio" name="explainable" value="yes">&emsp;&emsp;</label>
           <label><input type="radio" name="explainable" value="no"></label>
@@ -876,7 +889,14 @@
       </div>
       
       <div class="radio-row">
-        <div class="radio-label">与原始（目标语言）同源：</div>
+        <div class="radio-label">与原始（目标语言）同源：
+          <span class="help-tip" aria-label="help">
+            <img src="img/question.png" alt="问号">
+            <span class="tooltip">
+              与谱系关系更近的姊妹语言或方言中的词同源
+            </span>
+          </span>
+        </div>
         <div class="radio-options" id="cognateOptions">
           <label><input type="radio" name="cognate" value="yes">&emsp;&emsp;</label>
           <label><input type="radio" name="cognate" value="no"></label>
@@ -973,8 +993,9 @@
             <option value="AD">AD</option>
           </select>
         </span>
-        ，所以在该时间区间 A, B, C, D 语言未分化。
+        ，<span id="timeConclusion"></span>
       </div>
+      <div class="hint-text">*请点击查看一系列<a href="#">时间信息</a>作为参考，也可以做更加精确的调整。</div>
     </div>
 
     <div class="form-buttons">
@@ -1112,8 +1133,38 @@
 
       window.languages = getLanguages();
 
+      window.renderTimeConclusion = function renderTimeConclusion() {
+        const type = document.querySelector('input[name="projectType"]:checked')?.value; // "1"/"2"/"3"
+        const langs = (window.languages || []).filter(Boolean);
+        const el = document.getElementById('timeConclusion');
+        if (!el) return;
+
+        if (!type || langs.length === 0) {
+          el.textContent = '所以在该时间区间目标语言未分化。';
+          return;
+        }
+
+        const A = langs[0] || 'A';
+        const rest = langs.slice(1).join('、') || 'B、C、D';
+
+        if (type === '1') {
+          el.textContent = `所以在该时间区间 ${A} 与 ${rest} 未分化。`;
+        } else if (type === '2') {
+          el.textContent = `所以在该时间区间 ${A} ${rest} 未分化。`;
+        } else if (type === '3') {
+          el.textContent = `所以在该时间区间 ${A} 的不同方言未分化。`;
+        } else {
+          el.textContent = '所以在该时间区间相关语言未分化。';
+        }
+      }
+
       languageContainer.addEventListener("input", () => {
         window.languages = getLanguages();
+        renderTimeConclusion();
+      });
+
+      document.querySelectorAll('input[name="projectType"]').forEach(r => {
+        r.addEventListener('change', renderTimeConclusion);
       });
 
       window.languageContainer = languageContainer;
@@ -1131,6 +1182,7 @@
 
       document.getElementById("addLanguageBtn").addEventListener("click", () => addLanguageInput());
       window.languages = getLanguages();
+      renderTimeConclusion();
 
       document.getElementById("viewTreeFile").addEventListener("click", () => {
         const base64 = localStorage.getItem("tempTreeFileBase64");
@@ -1479,9 +1531,11 @@
         hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
 
         window.dialectRows = document.querySelectorAll("#wordBody tr").length;
+
+        setupMatchSection();
       };
 
-      (function setupMatchSection() {
+      window.setupMatchSection = function setupMatchSection() {
         const fullNote = document.getElementById('fullNote');
         const relaxedOptions = document.getElementById('relaxedOptions');
         const relaxedNote = document.getElementById('relaxedNote');
@@ -1513,7 +1567,7 @@
             }
           });
         });
-      })();
+      };
 
       (function setupLevelAndEtymology() {
         const originChooser = document.getElementById('originChooser');
@@ -1797,7 +1851,7 @@
       window.populateBorrowPage = function populateBorrowPage(entry) {
         const box1 = document.getElementById('borrowSourceGroup');
         const box2 = document.getElementById('borrowChangeGroup');
-        const type = document.querySelector('input[name="originType"]:checked')?.value;
+        type = document.querySelector('input[name="originType"]:checked')?.value;
         if (!type) {
           const ex = document.querySelector('input[name="explainable"]:checked')?.value; // yes/no
           const cg = document.querySelector('input[name="cognate"]:checked')?.value;     // yes/no
@@ -2070,6 +2124,7 @@
           const cur_entry = (typeof editingVocabIndex === 'number') ? vocabData[editingVocabIndex] : null;
           populateBorrowPage(cur_entry || {});
           populateTimeRange(cur_entry || {});
+          renderTimeConclusion();
         }
         document.getElementById(pageId).classList.add('active');
       }
@@ -2352,7 +2407,7 @@
       } else if (matchVal === 'partial') {
         fullMatch = false;
         partialMatch = true;
-        relaxedMatch = (relaxedVal === 'crossBranch');
+        relaxedMatch = (relaxedVal === 'branchOnly');
       }
 
       let inferredOrigin = null;

@@ -91,19 +91,6 @@ function closeAuthModal() {
         });
     }
 
-    // function bindProfileName(target) {
-    //     const el = typeof target === 'string' ? document.querySelector(target) : target;
-    //     if (!el) return;
-    //     profileTargets.add(el);
-    //     const u = getUsername();
-    //     el.textContent = isLoggedIn() && u ? u : '登录';
-    //     el.addEventListener('click', () => {
-    //         if (!isLoggedIn()) {
-    //             openModal();
-    //         }
-    //     });
-    // }
-
     window.Auth = {
         init() {
           this.loadAuthUI();

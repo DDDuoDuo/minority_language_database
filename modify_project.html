@@ -697,16 +697,18 @@
         <label><input type="radio" name="category" value="蔬菜"> 蔬菜</label><br>
         <label><input type="radio" name="category" value="水果"> 水果</label><br>
         <label><input type="radio" name="category" value="家畜"> 家畜</label><br>
-        <label><input type="radio" name="category" value="外来文化概念"> 外来文化概念</label>
+        <label><input type="radio" name="category" value="外来文化概念"> 外来文化概念</label><br>
         <label><input type="radio" name="category" value="其他"> 其他</label>
       </div>
     </div>
     
     <div class="form-group">
       <label><strong>词表：</strong></label><br>
-      <select id="wordSelect">
-        <option value="">请选择词汇</option>
-      </select>
+      <div id="wordSelectHost">
+        <select id="wordSelect">
+          <option value="">请选择词汇</option>
+        </select>
+      </div>
     </div>
 
     <div class="page-buttons">
@@ -961,8 +963,7 @@
         <label><input type="radio" name="borrowChange" value="元音高化或低化"> 元音高化或低化</label><br><br>
         <label><input type="radio" name="borrowChange" value="复辅音简化"> 复辅音简化</label><br><br>
         <label>
-          <input type="radio" name="borrowChange" value="其他">
-          其他 <input type="text" id="borrowChangeOther" placeholder="请填写">
+          <input type="radio" name="borrowChange" value="其他">其他 <input type="text" id="borrowChangeOther" placeholder="请填写">
         </label>
       </div>
     </div>
@@ -1285,47 +1286,57 @@
           });
         })
         .catch(err => console.error("无法加载词表 CSV:", err));
+      
+      const currentCat = document.querySelector('input[name="category"]:checked')?.value;
+      if (currentCat) {
+        renderWordsForCategory(currentCat);
+      }
 
-      document.querySelectorAll('input[name="category"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-          const selectedCategory = this.value;
-          const wordSelect = document.getElementById("wordSelect");
-          wordSelect.innerHTML = "";
+      window.renderWordsForCategory = function renderWordsForCategory(selectedCategory) {
+        const host = document.getElementById('wordSelectHost');
+        if (!host) return;
 
-          if (selectedCategory === "其他") {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.id = "customWordInput";
-            input.placeholder = "请输入词汇";
-            input.className = "custom-word-input";
-            wordSelect.replaceWith(input);
-            input.addEventListener("input", () => {
-              window.selectedWord = input.value.trim();
-            });
+        if (selectedCategory === '其他') {
+          if (host.firstElementChild && host.firstElementChild.tagName.toLowerCase() === 'input') {
             return;
           }
-
-          if (wordSelect.tagName.toLowerCase() !== "select") {
-            const newSelect = document.createElement("select");
-            newSelect.id = "wordSelect";
-            newSelect.innerHTML = `<option value="">请选择词汇</option>`;
-            const container = document.querySelector("#wordSelect").parentElement || document.body;
-            container.replaceChild(newSelect, document.getElementById("customWordInput"));
-          }
-
-          const list = wordOptions[selectedCategory] || [];
-          const sel = document.getElementById("wordSelect");
-          sel.innerHTML = `<option value="">请选择词汇</option>`;
-          list.forEach(word => {
-            const opt = document.createElement("option");
-            opt.value = word;
-            opt.textContent = word;
-            sel.appendChild(opt);
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.id = 'customWordInput';
+          input.placeholder = '请输入自定义词汇';
+          input.className = 'custom-word-input';
+          host.replaceChildren(input);
+          input.addEventListener('input', () => {
+            window.selectedWord = input.value.trim();
           });
+          return;
+        }
 
-          sel.addEventListener("change", () => {
-            window.selectedWord = sel.value.trim();
-          });
+        let select = host.firstElementChild;
+        if (!select || select.tagName.toLowerCase() !== 'select') {
+          select = document.createElement('select');
+          select.id = 'wordSelect';
+          host.replaceChildren(select);
+        }
+
+        const list = (window.wordOptions && window.wordOptions[selectedCategory]) ? window.wordOptions[selectedCategory] : [];
+
+        select.innerHTML = `<option value="">请选择词汇</option>`;
+        list.forEach(w => {
+          const opt = document.createElement('option');
+          opt.value = w;
+          opt.textContent = w;
+          select.appendChild(opt);
+        });
+
+        select.onchange = () => {
+          window.selectedWord = select.value.trim();
+        };
+      }
+
+      document.querySelectorAll('input[name="category"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          renderWordsForCategory(radio.value);
         });
       });
 
@@ -1443,9 +1454,18 @@
       }
 
       window.getSelectedWord = function getSelectedWord() {
-        const sel = document.getElementById("wordSelect");
-        return sel ? (sel.value || "") : "";
-      };
+        const host = document.getElementById('wordSelectHost');
+        if (!host) return '';
+        const el = host.firstElementChild;
+        if (!el) return '';
+        if (el.tagName.toLowerCase() === 'select') {
+          return (el.value || '').trim();
+        }
+        if (el.tagName.toLowerCase() === 'input') {
+          return (el.value || '').trim();
+        }
+        return '';
+      }
 
       window.populateSyllablePage = function populateSyllablePage(word, wordData) {
         const wordBody = document.getElementById("wordBody");
@@ -2135,7 +2155,7 @@
       } else {
         if (currentPage === 3) {
           const category = document.querySelector('input[name="category"]:checked')?.value;
-          const word = document.getElementById('wordSelect')?.value || '';
+          const word = getSelectedWord();
           if (!category || !word) {
             alert("请选择类别和词汇");
             currentPage = 2;

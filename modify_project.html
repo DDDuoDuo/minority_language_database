@@ -1272,25 +1272,39 @@
         populateSyllablePage(null, null);
       });
 
-      let wordOptions = {};
+      window.wordOptions = {};
 
       fetch("word_options.csv")
         .then(res => res.text())
         .then(text => {
-          const lines = text.split(/\r?\n/).filter(l => l.trim());
-          lines.forEach(line => {
+          const map = {};
+          text.split(/\r?\n/).filter(l => l.trim()).forEach(line => {
             const [cat, word] = line.split(",");
             if (!cat || !word) return;
-            if (!wordOptions[cat]) wordOptions[cat] = [];
-            wordOptions[cat].push(word);
+            (map[cat] ||= []).push(word);
           });
+          window.wordOptions = map;
+
+          const currentCat = document.querySelector('input[name="category"]:checked')?.value;
+          if (currentCat) {
+            renderWordsForCategory(currentCat);
+          }
         })
-        .catch(err => console.error("无法加载词表 CSV:", err));
-      
-      const currentCat = document.querySelector('input[name="category"]:checked')?.value;
-      if (currentCat) {
-        renderWordsForCategory(currentCat);
-      }
+        .catch(err => {
+          console.error("无法加载词表 CSV:", err);
+          if (!window.wordOptions || Object.keys(window.wordOptions).length === 0) {
+            window.wordOptions = {
+              "工具质料": ["石","铜","铁","木","骨","牙","金","锡","银"],
+              "禾谷类作物": ["稻","小麦","玉米"],
+              "蔬菜": ["白菜","萝卜"],
+              "水果": ["苹果","梨"],
+              "家畜": ["牛","羊"],
+              "外来文化概念": ["佛","汉字","钱币"]
+            };
+            const currentCat = document.querySelector('input[name="category"]:checked')?.value;
+            if (currentCat) renderWordsForCategory(currentCat);
+          }
+        });
 
       window.renderWordsForCategory = function renderWordsForCategory(selectedCategory) {
         const host = document.getElementById('wordSelectHost');

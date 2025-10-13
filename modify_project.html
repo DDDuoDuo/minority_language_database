@@ -2,6 +2,7 @@
 <head>
   <link rel="stylesheet" href="auth.css">
   <script src="auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <meta charset="UTF-8">
   <title>新建项目</title>
   <style>
@@ -312,7 +313,7 @@
     .vocab-table-wrapper {
       border: 1px solid #ccc;
       border-radius: 6px;
-      overflow-x: auto;
+      overflow: auto;
     }
 
     .vocab-table {
@@ -527,6 +528,56 @@
       padding: 4px 12px;
       font-size: 16px;
       cursor: pointer;
+    }
+
+    .modal-backdrop{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 9998;
+    }
+
+    .modal{
+      position: fixed; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(1000px, 92vw);
+      max-height: 86vh;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.2);
+      z-index: 9999;
+      display: flex; flex-direction: column;
+    }
+
+    .modal-header{
+      display: 
+      flex; align-items: 
+      center; 
+      justify-content: space-between;
+      padding: 14px 16px; 
+      border-bottom: 1px solid #eee;
+    }
+    
+    .modal-close{
+      background: none; 
+      border: none; 
+      font-size: 22px; 
+      cursor: pointer;
+      line-height: 1; 
+      padding: 4px 8px;
+    }
+
+    .modal-body{
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .table-wrap { 
+      margin-top: 12px;
+      overflow: auto;
+    }
+
+    .table-title { 
+      margin: 8px 0; 
     }
   </style>
 </head>
@@ -997,7 +1048,7 @@
         </span>
         ，<span id="timeConclusion"></span>
       </div>
-      <div class="hint-text">*请点击查看一系列<a href="#">时间信息</a>作为参考，也可以做更加精确的调整。</div>
+      <div class="hint-text">*请点击查看一系列<a href="#" id="openTimeRefs">时间信息</a>作为参考，也可以做更加精确的调整。</div>
     </div>
 
     <div class="form-buttons">
@@ -1007,6 +1058,36 @@
       <div class="right-buttons">
         <button type="button" class="nav-button" onclick="saveVocab()">保存并返回</button>
         <button type="button" class="nav-button" onclick="showPage(1)">返回</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="timeModalBackdrop" style="display:none;"></div>
+  <div class="modal" id="timeModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="timeModalTitle">
+    <div class="modal-header">
+      <h3 id="timeModalTitle">时间参考表</h3>
+      <button type="button" class="modal-close" id="timeModalClose" aria-label="关闭">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="table-wrap">
+        <h4 class="table-title">参考表 1</h4>
+        <div class="vocab-table-wrapper">
+          <table class="vocab-table" id="timeTable1">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <h4 class="table-title">参考表 2</h4>
+        <div class="vocab-table-wrapper">
+          <table class="vocab-table" id="timeTable2">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -1274,7 +1355,7 @@
 
       window.wordOptions = {};
 
-      fetch("word_options.csv")
+      fetch("sheets/word_options.csv")
         .then(res => res.text())
         .then(text => {
           const map = {};
@@ -1725,6 +1806,94 @@
         if (inpUpper) inpUpper.value = upper;
         if (selUpperEra) selUpperEra.value = upperEra;
       };
+
+      const timeModal = document.getElementById('timeModal');
+      const timeModalBackdrop = document.getElementById('timeModalBackdrop');
+      const openTimeRefs = document.getElementById('openTimeRefs');
+      const btnCloseTime = document.getElementById('timeModalClose');
+
+      function openTimeModal(){
+        if (!timeModal || !timeModalBackdrop) return;
+        timeModal.style.display = 'block';
+        timeModalBackdrop.style.display = 'block';
+      }
+      function closeTimeModal(){
+        if (!timeModal || !timeModalBackdrop) return;
+        timeModal.style.display = 'none';
+        timeModalBackdrop.style.display = 'none';
+      }
+
+      btnCloseTime?.addEventListener('click', closeTimeModal);
+      timeModalBackdrop?.addEventListener('click', closeTimeModal);
+
+      function parseCSV(text){
+        const rows = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+        return rows.map(line => line.split(','));
+      }
+
+      function renderTable(tableId, data){
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        thead.innerHTML = ''; tbody.innerHTML = '';
+
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        const headRow = document.createElement('tr');
+        data[0].forEach(h => {
+          const th = document.createElement('th');
+          th.textContent = h ?? '';
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+
+        for (let i = 1; i < data.length; i++){
+          const tr = document.createElement('tr');
+          data[i].forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell ?? '';
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        }
+      }
+
+      function loadXlsxOrCsv(url){
+        if (url.toLowerCase().endsWith('.csv')) {
+          return fetch(url).then(r => r.text()).then(txt => {
+            const rows = txt.split(/\r?\n/).filter(l => l.trim().length > 0);
+            return rows.map(line => line.split(','));
+          });
+        }
+
+        return fetch(url).then(r => r.arrayBuffer()).then(buf => {
+          if (!window.XLSX) throw new Error('未引入 SheetJS（xlsx.full.min.js），无法解析 .xlsx');
+          const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+          const first = wb.SheetNames[0];
+          const ws = wb.Sheets[first];
+          return XLSX.utils.sheet_to_json(ws, { header: 1 });
+        });
+      }
+
+      let timeRefsLoaded = false;
+      function loadTimeRefsOnce(){
+        if (timeRefsLoaded) return;
+        Promise.all([
+          loadXlsxOrCsv('sheets/ref1.xlsx').then(data => renderTable('timeTable1', data)),
+          loadXlsxOrCsv('sheets/ref2.xlsx').then(data => renderTable('timeTable2', data)),
+        ]).then(() => {
+          timeRefsLoaded = true;
+        }).catch(err => {
+          console.error('加载参考表失败：', err);
+        });
+      }
+
+      openTimeRefs?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openTimeModal();
+        loadTimeRefsOnce();
+      });
 
       const MAX_COMPARE_ROWS = 4;
 

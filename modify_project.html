@@ -531,34 +531,34 @@
       cursor: pointer;
     }
 
-    .modal-backdrop{
+    .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.35);
       z-index: 9998;
     }
 
-    .modal{
+    .modal {
       position: fixed; left: 50%; top: 50%;
       transform: translate(-50%, -50%);
       width: min(1200px, 92vw);
-      max-height: 86vh;
+      max-height: 90vh;
       background: #fff;
       border-radius: 10px;
       box-shadow: 0 12px 30px rgba(0,0,0,.2);
       z-index: 9999;
-      display: flex; flex-direction: column;
+      display: flex; 
+      flex-direction: column;
     }
 
-    .modal-header{
-      display: 
-      flex; align-items: 
-      center; 
+    .modal-header {
+      display: flex; 
+      align-items: center; 
       justify-content: space-between;
       padding: 14px 16px; 
       border-bottom: 1px solid #eee;
     }
     
-    .modal-close{
+    .modal-close {
       background: none; 
       border: none; 
       font-size: 22px; 
@@ -567,10 +567,34 @@
       padding: 4px 8px;
     }
 
-    .modal-body{
+    .modal-body {
       padding: 16px;
       flex: 1;
       min-height: 0;
+      overflow: auto;
+    }
+
+    body.modal-open {
+      overflow: hidden; 
+    }
+
+    .ref-table {
+      table-layout: fixed;
+      font-size: 12px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .ref-table th,
+    .ref-table td {
+      padding: 4px 6px;
+      line-height: 1.3;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .ref-table-wrapper {
+      max-height: 70vh;
       overflow: auto;
     }
 
@@ -1075,8 +1099,8 @@
     <div class="modal-body">
       <div class="table-wrap">
         <h4 class="table-title">参考表 1</h4>
-        <div class="vocab-table-wrapper">
-          <table class="vocab-table" id="timeTable1">
+        <div class="ref-table-wrapper">
+          <table class="ref-table" id="timeTable1">
             <thead></thead>
             <tbody></tbody>
           </table>
@@ -1085,8 +1109,8 @@
 
       <div class="table-wrap">
         <h4 class="table-title">参考表 2</h4>
-        <div class="vocab-table-wrapper">
-          <table class="vocab-table" id="timeTable2">
+        <div class="ref-table-wrapper">
+          <table class="ref-table" id="timeTable2">
             <thead></thead>
             <tbody></tbody>
           </table>
@@ -1837,11 +1861,13 @@
         if (!timeModal || !timeModalBackdrop) return;
         timeModal.style.display = 'block';
         timeModalBackdrop.style.display = 'block';
+        document.body.classList.add('modal-open');
       }
       function closeTimeModal(){
         if (!timeModal || !timeModalBackdrop) return;
         timeModal.style.display = 'none';
         timeModalBackdrop.style.display = 'none';
+        document.body.classList.remove('modal-open');
       }
 
       btnCloseTime?.addEventListener('click', closeTimeModal);
@@ -1852,32 +1878,82 @@
         return rows.map(line => line.split(','));
       }
 
-      function renderTable(tableId, data){
+      function renderTable(tableId, data, options = {}) {
         const table = document.getElementById(tableId);
         if (!table) return;
+
         const thead = table.querySelector('thead');
         const tbody = table.querySelector('tbody');
-        thead.innerHTML = ''; tbody.innerHTML = '';
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
 
         if (!Array.isArray(data) || data.length === 0) return;
 
-        const headRow = document.createElement('tr');
-        data[0].forEach(h => {
+        const head = data[0] || [];
+        const headTr = document.createElement('tr');
+        head.forEach(h => {
           const th = document.createElement('th');
           th.textContent = h ?? '';
-          headRow.appendChild(th);
+          headTr.appendChild(th);
         });
-        thead.appendChild(headRow);
+        thead.appendChild(headTr);
 
-        for (let i = 1; i < data.length; i++){
-          const tr = document.createElement('tr');
-          data[i].forEach(cell => {
-            const td = document.createElement('td');
-            td.textContent = cell ?? '';
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
+        const rows = data.slice(1);
+        const groupFirst = !!options.groupFirstCol;
+
+        let groupInfo = null;
+        if (groupFirst && rows.length > 0) {
+          groupInfo = [];
+          let i = 0;
+          while (i < rows.length) {
+            const start = i;
+            const txt = (rows[i] && rows[i][0]) ?? '';
+            let span = 1;
+            i++;
+            while (i < rows.length && ((rows[i] && rows[i][0]) ?? '') === txt) {
+              span++;
+              i++;
+            }
+            groupInfo.push({ startIdx: start, span, text: txt });
+          }
         }
+
+        let groupMap = null;
+        if (groupFirst && groupInfo) {
+          groupMap = new Array(rows.length).fill(null);
+          groupInfo.forEach(block => {
+            groupMap[block.startIdx] = { draw: true, rowspan: block.span, text: block.text };
+            for (let k = block.startIdx + 1; k < block.startIdx + block.span; k++) {
+              groupMap[k] = { draw: false };
+            }
+          });
+        }
+
+        rows.forEach((arr, rIdx) => {
+          const tr = document.createElement('tr');
+          if (groupFirst) {
+            const g = groupMap ? groupMap[rIdx] : null;
+            if (g && g.draw) {
+              const td = document.createElement('td');
+              td.textContent = g.text ?? '';
+              if (g.rowspan > 1) td.rowSpan = g.rowspan;
+              tr.appendChild(td);
+            }
+            for (let c = 1; c < head.length; c++) {
+              const td = document.createElement('td');
+              td.textContent = (arr && arr[c]) ?? '';
+              tr.appendChild(td);
+            }
+          } else {
+            for (let c = 0; c < head.length; c++) {
+              const td = document.createElement('td');
+              td.textContent = (arr && arr[c]) ?? '';
+              tr.appendChild(td);
+            }
+          }
+
+          tbody.appendChild(tr);
+        });
       }
 
       function loadXlsxOrCsv(url){
@@ -1901,8 +1977,8 @@
       function loadTimeRefsOnce(){
         if (timeRefsLoaded) return;
         Promise.all([
-          loadXlsxOrCsv('sheets/ref1.xlsx').then(data => renderTable('timeTable1', data)),
-          loadXlsxOrCsv('sheets/ref2.xlsx').then(data => renderTable('timeTable2', data)),
+          loadXlsxOrCsv('sheets/ref1.xlsx').then(data => renderTable('timeTable1', data, { groupFirstCol: true })),
+          loadXlsxOrCsv('sheets/ref2.xlsx').then(data => renderTable('timeTable2', data, { groupFirstCol: true })),
         ]).then(() => {
           timeRefsLoaded = true;
         }).catch(err => {

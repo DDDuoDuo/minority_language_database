@@ -313,6 +313,7 @@
     .vocab-table-wrapper {
       border: 1px solid #ccc;
       border-radius: 6px;
+      max-height: 60vh;
       overflow: auto;
     }
 
@@ -1441,6 +1442,20 @@
         });
       });
 
+      window.setWordSelection = function setWordSelection(word) {
+        const host = document.getElementById('wordSelectHost');
+        if (!host || !host.firstElementChild) return;
+        const el = host.firstElementChild;
+
+        if (el.tagName.toLowerCase() === 'select') {
+          const opt = Array.from(el.options).find(o => o.value === word);
+          if (opt) el.value = word;
+        } else if (el.tagName.toLowerCase() === 'input') {
+          el.value = word || '';
+        }
+        window.selectedWord = word || '';
+      }
+
       const maxRows = 6;
 
       function addDialectRow(valueDialect = "", valueForm = "") {
@@ -2518,6 +2533,8 @@
               const sel = document.getElementById("wordSelect");
               if (sel) sel.value = vocab.word || "";
             }
+            renderWordsForCategory(vocab.category);
+            setWordSelection(vocab.word);
 
             populateSyllablePage(entry.word, entry.wordData || null);
             

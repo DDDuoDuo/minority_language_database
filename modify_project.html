@@ -159,7 +159,7 @@
       color: #333;
     }
 
-    .project-form input[type="text"] {
+    .project-form input[type="text"]:not(.coord-input) {
       width: 100%;
       max-width: 800px;
       padding: 4px;
@@ -213,6 +213,14 @@
     #language-container {
       margin-top: 10px;
       margin-bottom: 20px;
+    }
+    
+    .coord-input {
+      width: 80px;
+      max-width: 800px;
+      padding: 4px;
+      font-size: 16px;
+      margin-top: 10px;
     }
 
     .remove-language {
@@ -298,6 +306,12 @@
 
     .vocab-table-header-left {
       display: flex;
+    }
+
+    .vocab-table-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .new-vocab-button {
@@ -723,7 +737,11 @@
         <div class="vocab-table-container">
           <div class="vocab-table-header">
             <h2 id="vocabListTitle">词汇列表</h2>
-            <button type="button" class="new-vocab-button" id="addVocabBtn">添加词汇</button>
+            <div class="vocab-table-header-right">
+              <button type="button" class="new-vocab-button" id="exportVocabTableBtn">导出语言分化信息</button>
+              <button type="button" class="new-vocab-button" id="exportAllVocabsBtn">导出全部录入词汇</button>
+              <button type="button" class="new-vocab-button" id="addVocabBtn">添加词汇</button>
+            </div>
           </div>
           
           <div class="vocab-table-wrapper">
@@ -746,6 +764,29 @@
             </table>
 
             <div id="noVocabs">暂无词汇</div>
+          </div>
+        </div>
+
+        <div class="form-group time-range-section" id="projectTimeSection">
+          <div class="time-range-title">根据录入的时间信息，请确定本项目中目标语言的分化时间：</div>
+
+          <div class="time-sentence">
+            目标语言分化时间为 上限
+            <span class="time-inline">
+              <input type="number" id="projectTimeUpper" class="time-input" placeholder="年份">
+              <select id="projectTimeUpperEra" class="time-select">
+                <option value="BC">BC</option>
+                <option value="AD">AD</option>
+              </select>
+            </span>
+            至 下限
+            <span class="time-inline">
+              <input type="number" id="projectTimeLower" class="time-input" placeholder="年份">
+              <select id="projectTimeLowerEra" class="time-select">
+                <option value="BC">BC</option>
+                <option value="AD">AD</option>
+              </select>
+            </span>
           </div>
         </div>
 
@@ -1155,7 +1196,7 @@
       removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
     }
 
-    window.addLanguageInput = function addLanguageInput(value = "") {
+    window.addLanguageInput = function addLanguageInput(value = "", lng = "", lat = "") {
       if (languageContainer.children.length >= 6) {
         alert("最多只能添加6种语言");
         return;
@@ -1164,6 +1205,8 @@
       div.className = "language-group";
       div.innerHTML = `
         <input type="text" class="language-input" placeholder="输入语言名称" value="${value}">
+        <input type="text" class="coord-input lng-input" placeholder="经度" value="${lng}">
+        <input type="text" class="coord-input lat-input" placeholder="纬度" value="${lat}">
         <button type="button" class="remove-language">移除</button>
       `;
       languageContainer.appendChild(div);
@@ -1172,6 +1215,10 @@
       div.querySelector(".remove-language").addEventListener("click", () => {
         div.remove();
         updateRemoveButtons();
+        if (typeof window.languages === 'object') {
+          window.languages = getLanguages();
+          if (typeof renderTimeConclusion === 'function') renderTimeConclusion();
+        }
       });
     }
 
@@ -1229,17 +1276,30 @@
           const radio = document.querySelector(`input[name=\"projectType\"][value=\"${existing.projectType}\"]`);
           if (radio) radio.checked = true;
         }
-        if (existing?.treeFile && !isTreeFileRemoved) {
-          const blob = base64ToBlob(existing.treeFile.content.split(",")[1], existing.treeFile.type);
-          const url = URL.createObjectURL(blob);
-          viewTreeFile.href = url;
-          viewTreeFile.download = existing.treeFile.name;
-          treeFileActions.style.display = "flex";
-          document.getElementById("treeFileActions").style.display = "flex";
 
-          localStorage.setItem("tempTreeFileBase64", existing.treeFile.content.split(",")[1]);
-          localStorage.setItem("tempTreeFileName", existing.treeFile.name);
-          localStorage.setItem("tempTreeFileType", existing.treeFile.type);
+        if (existing?.treeFile && !isTreeFileRemoved) {
+          const content = existing.treeFile.content || "";
+          const base64Data = content.includes(",") ? content.split(",")[1] : content;
+          const mime = existing.treeFile.type || "application/octet-stream";
+          const blob = base64ToBlob(base64Data, mime);
+          const url = URL.createObjectURL(blob);
+
+          window.currentTreeDataURL = url;
+          window.currentTreeFileName = existing.treeFile.name || "treefile";
+          treeFileActions.style.display = "flex";
+        }
+
+        if (existing?.projectTimeRange) {
+          const ptr = existing.projectTimeRange;
+          const up = document.getElementById('projectTimeUpper');
+          const upEra = document.getElementById('projectTimeUpperEra');
+          const low = document.getElementById('projectTimeLower');
+          const lowEra = document.getElementById('projectTimeLowerEra');
+
+          if (up) up.value = ptr.upper ?? '';
+          if (upEra) upEra.value = ptr.upperEra || 'BC';
+          if (low) low.value = ptr.lower ?? '';
+          if (lowEra) lowEra.value = ptr.lowerEra || 'BC';
         }
 
         vocabData = existing.vocabList || [];
@@ -1247,10 +1307,21 @@
       }
 
       languageContainer = document.getElementById("language-container");
-      function getLanguages() {
+
+      window.getLanguages = function getLanguages() {
         return Array.from(document.querySelectorAll(".language-input"))
           .map(i => i.value.trim())
           .filter(Boolean);
+      }
+
+      window.getLanguageCoords = function getLanguageCoords() {
+        const rows = Array.from(document.querySelectorAll("#language-container .language-group"));
+        return rows.map(row => {
+          const name = row.querySelector(".language-input")?.value.trim() || "";
+          const lng  = row.querySelector(".lng-input")?.value.trim() || "";
+          const lat  = row.querySelector(".lat-input")?.value.trim() || "";
+          return { name, lng, lat };
+        }).filter(x => x.name);
       }
 
       window.languages = getLanguages();
@@ -1261,18 +1332,10 @@
         const el = document.getElementById('timeConclusion');
         if (!el) return;
 
-        const isPartial =
-          document.querySelector('input[name="correspondence"][value="partial"]')?.checked
-          || document.getElementById('partialMatch')?.checked
-          || document.querySelector('input[name="fullMatch"][value="0"]')?.checked
-          || false;
+        const matchVal = document.querySelector('input[name="matchType"]:checked')?.value;
+        const relaxedVal = document.querySelector('input[name="relaxedType"]:checked')?.value;
 
-        const relaxedNo =
-          document.querySelector('input[name="relaxedMatch"][value="no"]')?.checked
-          || document.getElementById('relaxedNo')?.checked
-          || false;
-
-        const divisionWord = (isPartial && relaxedNo) ? '已分化' : '未分化';
+        const divisionWord = (matchVal === 'partial' && relaxedVal === 'branchOnly') ? '已全分化' : '未分化';
 
         if (!type || langs.length === 0) {
           el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
@@ -1293,6 +1356,59 @@
         }
       }
 
+      window.eraYearToNumber = function eraYearToNumber(year, era) {
+        if (year === '' || year == null) return null;
+        const n = Number(year);
+        if (!isFinite(n)) return null;
+        return (era === 'BC') ? -Math.abs(n) : Math.abs(n);
+      }
+
+      window.numberToEraYear = function numberToEraYear(n) {
+        if (n == null) return { era: 'BC', year: '' };
+        return n < 0 ? { era: 'BC', year: Math.abs(n) } : { era: 'AD', year: Math.abs(n) };
+      }
+
+      window.computeSuggestedProjectTime = function computeSuggestedProjectTime(vocabList) {
+        if (!Array.isArray(vocabList) || vocabList.length === 0) return null;
+
+        let minUpper = null;
+        let maxLower = null;
+
+        vocabList.forEach(v => {
+          const t = v?.timeInfo;
+          if (!t) return;
+          const upNum  = eraYearToNumber(t.upper, t.upperEra);
+          const lowNum = eraYearToNumber(t.lower, t.lowerEra);
+          if (upNum != null)  minUpper = (minUpper == null) ? upNum  : Math.min(minUpper, upNum);
+          if (lowNum != null) maxLower = (maxLower == null) ? lowNum : Math.max(maxLower, lowNum);
+        });
+
+        if (minUpper == null && maxLower == null) return null;
+
+        const up = numberToEraYear(minUpper);
+        const low = numberToEraYear(maxLower);
+        return {
+          upper: up.year || '',
+          upperEra: up.era,
+          lower: low.year || '',
+          lowerEra: low.era
+        };
+      }
+
+      window.prefillProjectTimeIfEmpty = function prefillProjectTimeIfEmpty(suggest) {
+        if (!suggest) return;
+        const up   = document.getElementById('projectTimeUpper');
+        const upE  = document.getElementById('projectTimeUpperEra');
+        const low  = document.getElementById('projectTimeLower');
+        const lowE = document.getElementById('projectTimeLowerEra');
+        if (!up || !upE || !low || !lowE) return;
+
+        if (!up.value)   up.value   = suggest.upper ?? '';
+        if (!upE.value)  upE.value  = suggest.upperEra || 'BC';
+        if (!low.value)  low.value  = suggest.lower ?? '';
+        if (!lowE.value) lowE.value = suggest.lowerEra || 'BC';
+      }
+
       languageContainer.addEventListener("input", () => {
         window.languages = getLanguages();
         renderTimeConclusion();
@@ -1304,12 +1420,14 @@
 
       window.languageContainer = languageContainer;
 
-      if (existing?.languages && Array.isArray(existing.languages)) {
+      if (existing?.languageCoords && Array.isArray(existing.languageCoords) && existing.languageCoords.length) {
+        existing.languageCoords.forEach(({name, lng, lat}) => addLanguageInput(name || "", lng || "", lat || ""));
+        const missingCount = 2 - existing.languageCoords.length;
+        for (let i = 0; i < missingCount; i++) addLanguageInput();
+      } else if (existing?.languages && Array.isArray(existing.languages)) {
         existing.languages.forEach(name => addLanguageInput(name));
         const missingCount = 2 - existing.languages.length;
-        for (let i = 0; i < missingCount; i++) {
-          addLanguageInput();
-        }
+        for (let i = 0; i < missingCount; i++) addLanguageInput();
       } else {
         addLanguageInput();
         addLanguageInput();
@@ -1320,12 +1438,22 @@
       renderTimeConclusion();
 
       document.getElementById("viewTreeFile").addEventListener("click", () => {
-        const base64 = localStorage.getItem("tempTreeFileBase64");
-        const type = localStorage.getItem("tempTreeFileType");
-        if (base64 && type) {
-          const blob = base64ToBlob(base64, type);
+        const dataURL =
+          window.tempTreeFile?.dataURL ||
+          window.currentTreeDataURL ||
+          existing?.treeFile?.content || null;
+
+        if (!dataURL) return;
+
+        if (dataURL.startsWith('data:')) {
+          const arr = dataURL.split(',');
+          const mimeMatch = arr[0].match(/data:(.*);base64/);
+          const mime = (mimeMatch && mimeMatch[1]) || 'application/octet-stream';
+          const blob = base64ToBlob(arr[1], mime);
           const url = URL.createObjectURL(blob);
           window.open(url, "_blank");
+        } else {
+          window.open(dataURL, "_blank");
         }
       });
 
@@ -1344,17 +1472,14 @@
 
         const reader = new FileReader();
         reader.onload = function (e) {
-          const base64 = e.target.result.split(',')[1];
+          window.tempTreeFile = {
+            name: file.name,
+            type: file.type,
+            dataURL: e.target.result
+          };
 
-          localStorage.setItem("tempTreeFileBase64", base64);
-          localStorage.setItem("tempTreeFileName", file.name);
-          localStorage.setItem("tempTreeFileType", file.type);
-
-          const blob = base64ToBlob(base64, file.type);
-          const url = URL.createObjectURL(blob);
-
-          viewTreeFile.href = url;
-          viewTreeFile.download = file.name;
+          window.currentTreeDataURL = null;
+          window.currentTreeFileName = file.name;
           treeFileActions.style.display = "flex";
         };
         
@@ -1362,14 +1487,10 @@
       });
 
       removeTreeFile.addEventListener("click", () => {
-        localStorage.removeItem("tempTreeFileBase64");
-        localStorage.removeItem("tempTreeFileName");
-        localStorage.removeItem("tempTreeFileType");
-
         treeFileInput.value = "";
-        viewTreeFile.removeAttribute("href");
-        viewTreeFile.removeAttribute("download");
-
+        window.tempTreeFile = null;
+        window.currentTreeDataURL = null;
+        window.currentTreeFileName = null;
         treeFileActions.style.display = "none";
         isTreeFileRemoved = true;
       });
@@ -1777,7 +1898,7 @@
         document.querySelectorAll('input[name="relaxedType"]').forEach(r => {
           r.addEventListener('change', () => {
             const val = document.querySelector('input[name="relaxedType"]:checked')?.value;
-            if (val === 'crossBranch') {
+            if (val === 'branchOnly') {
               relaxedNote.classList.remove('hidden');
             } else {
               relaxedNote.classList.add('hidden');
@@ -2382,6 +2503,104 @@
         return "data:text/csv;charset=utf-8," + encodeURIComponent(text || "");
       }
 
+      window.downloadCSV = function downloadCSV(filename, rows) {
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        const csv = rows.map(r =>
+          r.map(cell => {
+            const s = (cell ?? '').toString();
+            if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+            return s;
+          }).join(',')
+        ).join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      window.buildVocabListCSV = function buildVocabListCSV(data) {
+        const header = [
+          '词项','历史层次','完全普遍对应','不完全普遍对应','放宽的完全普遍对应',
+          '时间信息','证据词汇','录入时间'
+        ];
+        const lines = [header];
+
+        (data || []).forEach(item => {
+          const full = item?.match?.type === 'full' || item?.fullMatch === true ? '是' : '否';
+          const partial = item?.match?.type === 'partial' || item?.partialMatch === true ? '是' : '否';
+
+          let relaxed = '否';
+          if (item?.relaxedMatch === true || item?.match?.relaxedType) relaxed = '是';
+
+          const t = item?.timeInfo;
+          const timeText = t
+            ? `${(t.lower ?? '')} ${(t.lowerEra ?? '')} — ${(t.upper ?? '')} ${(t.upperEra ?? '')}`.trim()
+            : '--';
+
+          const evidenceText = item?.evidence ? item.evidence : '--';
+
+          lines.push([
+            item?.word ?? '--',
+            item?.level ?? '--',
+            full,
+            partial,
+            relaxed,
+            timeText || '--',
+            evidenceText,
+            item?.recordedAt ?? '--'
+          ]);
+        });
+
+        return lines;
+      }
+
+      window.buildAllVocabsEvidenceCSV = function buildAllVocabsEvidenceCSV(data, projectLangs = []) {
+        const out = [];
+
+        (data || []).forEach((v, idx) => {
+          const word = v?.word ?? `词${idx+1}`;
+          const langs = Array.isArray(projectLangs) ? projectLangs : [];
+
+          const header = ['词汇','音韵对应', ...langs];
+          out.push(header);
+
+          const rows = v?.compData?.rows || [];
+          rows.forEach((r, rIdx) => {
+            const featText = Array.isArray(r?.feature) ? r.feature.join(';') : (r?.feature || '');
+            const line = [
+              rIdx === 0 ? (r?.word || word) : (r?.word || ''),
+              featText
+            ];
+
+            langs.forEach(L => {
+              line.push( (r?.forms?.[L] ?? '') );
+            });
+
+            out.push(line);
+          });
+
+          out.push(['']);
+        });
+
+        return out;
+      }
+
+      document.getElementById('exportVocabTableBtn')?.addEventListener('click', () => {
+        const rows = buildVocabListCSV(vocabData);
+        downloadCSV('词汇列表.csv', rows);
+      });
+
+      document.getElementById('exportAllVocabsBtn')?.addEventListener('click', () => {
+        const rows = buildAllVocabsEvidenceCSV(vocabData, (window.languages || []));
+        downloadCSV('全部词汇_证据.csv', rows);
+      });
+
       document.getElementById('addCompareRowBtn')?.addEventListener('click', () => {
         addCompareRow();
       });
@@ -2456,6 +2675,11 @@
         currentPage = 1;
         document.querySelector(".form-buttons").style.display = "none";
         document.querySelector(".page-buttons").style.display = "flex";
+
+        if (pageEl && pageEl.querySelector('#projectTimeSection')) {
+          const suggest = computeSuggestedProjectTime(vocabData);
+          prefillProjectTimeIfEmpty(suggest);
+        }
         return;
       } else {
         if (currentPage === 3) {
@@ -2510,7 +2734,8 @@
       if (!currentId) return;
 
       const languageInputs = document.querySelectorAll(".language-input");
-      const languages = Array.from(languageInputs).map(input => input.value.trim()).filter(Boolean);
+      const languages = getLanguages();
+      const languageCoords = getLanguageCoords();
 
       const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
       const existing = drafts.find(p => p.id === currentId);
@@ -2520,18 +2745,33 @@
       const references = document.getElementById("references").value.trim();
       const projectType = document.querySelector('input[name="projectType"]:checked')?.value || null;
 
-      const base64 = localStorage.getItem("tempTreeFileBase64");
-      const name = localStorage.getItem("tempTreeFileName");
-      const type = localStorage.getItem("tempTreeFileType");
+      const projectTimeUpper = (document.getElementById('projectTimeUpper')?.value || '').trim();
+      const projectTimeUpperEra = document.getElementById('projectTimeUpperEra')?.value || 'BC';
+      const projectTimeLower = (document.getElementById('projectTimeLower')?.value || '').trim();
+      const projectTimeLowerEra = document.getElementById('projectTimeLowerEra')?.value || 'BC';
 
-      const treeFile = document.getElementById("treeFile").files[0];
-      const treeFileObj = base64 ? {
-        name: name,
-        type: type,
-        content: `data:${type};base64,${base64}`
-      } : existing?.treeFile || null;
+      const projectTimeRange = {
+        upper: projectTimeUpper ? Number(projectTimeUpper) : '',
+        upperEra: projectTimeUpperEra,
+        lower: projectTimeLower ? Number(projectTimeLower) : '',
+        lowerEra: projectTimeLowerEra
+      };
 
-      function finalizeSave(treeFileObj) {
+      let treeFileForSave = null;
+
+      if (!isTreeFileRemoved) {
+        if (window.tempTreeFile?.dataURL) {
+          treeFileForSave = {
+            name: window.tempTreeFile.name,
+            type: window.tempTreeFile.type,
+            content: window.tempTreeFile.dataURL
+          };
+        } else if (existing?.treeFile) {
+          treeFileForSave = existing.treeFile;
+        }
+      }
+
+      function finalizeSave() {
         const draft = {
           id: currentId,
           projectName,
@@ -2539,9 +2779,11 @@
           references,
           projectType,
           languages,
+          languageCoords,
           createdAt: existing?.createdAt || new Date().toLocaleString(),
-          treeFile: isTreeFileRemoved ? null : (treeFileObj || existing?.treeFile || null),
+          treeFile: treeFileForSave,
           vocabList: vocabData,
+          projectTimeRange,
         };
 
         const index = drafts.findIndex(p => p.id === currentId);
@@ -2555,20 +2797,9 @@
         if (currentPage <= 1) alert("草稿已保存！");
       }
 
-      if (treeFile) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const treeFileObj = {
-            name: treeFile.name,
-            type: treeFile.type,
-            content: e.target.result
-          };
-          finalizeSave(treeFileObj);
-        };
-        reader.readAsDataURL(treeFile);
-      } else {
-        finalizeSave(null);
-      }
+      finalizeSave();
+      window.tempTreeFile = null;
+      window.currentTreeDataURL = null;
     };
 
     window.loadVocabList = function loadVocabList(vocabList) {
@@ -2600,7 +2831,7 @@
           <td>
             ${
               item.evidence
-                ? `<a href="${item.evidence}" download="${item.word || 'compare'}_compare.csv">链接</a>`
+                ? `<a href="${item.evidence}" download="${item.word || 'compare'}_证据.csv">链接</a>`
                 : "--"
             }
           </td>

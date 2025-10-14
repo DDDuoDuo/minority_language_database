@@ -1256,13 +1256,26 @@
       window.languages = getLanguages();
 
       window.renderTimeConclusion = function renderTimeConclusion() {
-        const type = document.querySelector('input[name="projectType"]:checked')?.value; // "1"/"2"/"3"
+        const type = document.querySelector('input[name="projectType"]:checked')?.value;
         const langs = (window.languages || []).filter(Boolean);
         const el = document.getElementById('timeConclusion');
         if (!el) return;
 
+        const isPartial =
+          document.querySelector('input[name="correspondence"][value="partial"]')?.checked
+          || document.getElementById('partialMatch')?.checked
+          || document.querySelector('input[name="fullMatch"][value="0"]')?.checked
+          || false;
+
+        const relaxedNo =
+          document.querySelector('input[name="relaxedMatch"][value="no"]')?.checked
+          || document.getElementById('relaxedNo')?.checked
+          || false;
+
+        const divisionWord = (isPartial && relaxedNo) ? '已分化' : '未分化';
+
         if (!type || langs.length === 0) {
-          el.textContent = '所以在该时间区间目标语言未分化。';
+          el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
           return;
         }
 
@@ -1270,13 +1283,13 @@
         const rest = langs.slice(1).join('、') || 'B、C、D';
 
         if (type === '1') {
-          el.textContent = `所以在该时间区间 ${A} 与 ${rest} 未分化。`;
+          el.textContent = `所以在该时间区间 ${A} 与 ${rest} ${divisionWord}。`;
         } else if (type === '2') {
-          el.textContent = `所以在该时间区间 ${A} ${rest} 未分化。`;
+          el.textContent = `所以在该时间区间 ${A} ${rest} ${divisionWord}。`;
         } else if (type === '3') {
-          el.textContent = `所以在该时间区间 ${A} 的不同方言未分化。`;
+          el.textContent = `所以在该时间区间 ${A} 的不同方言${divisionWord}。`;
         } else {
-          el.textContent = '所以在该时间区间相关语言未分化。';
+          el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
         }
       }
 

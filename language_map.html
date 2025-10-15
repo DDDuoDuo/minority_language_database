@@ -2,7 +2,7 @@
 <head>
   <link rel="stylesheet" href="auth.css">
   <script src="auth.js"></script>
-  <!-- <script src="https://webapi.amap.com/maps?v=2.0&key=API_KEY"></script> -->
+  <script src="https://webapi.amap.com/maps?v=2.0&key=0190baafdb829edc71b1c2b0cb9e3dd0"></script>
   <meta charset="UTF-8">
   <title>汉藏语分化时间数据库</title>
   <style>
@@ -128,11 +128,118 @@
         color: #333;
     }
 
-    #map-placeholder {
-      width: 85%;
-      height: 500px;
-      background-color: #e0e0e0;
+    .map-timeline-wrapper {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 16px;
       margin: 40px auto;
+      width: 85%;
+    }
+
+    #map-placeholder {
+      flex: 0 0 35%;
+      height: 500px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .timeline-wrapper {
+      flex: 0 0 60%;
+    }
+
+    .timeline-container {
+      max-width: 1200px;
+      margin: 0px auto 20px;
+      padding: 12px 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .timeline-axis {
+      display: grid;
+      grid-template-columns: repeat(19, 1fr);
+      gap: 8px;
+      align-items: end;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #333;
+      position: relative;
+    }
+
+    .timeline-axis .dynasty {
+      font-size: 12px;
+      text-align: center;
+      color: #333;
+      user-select: none;
+      white-space: nowrap;
+      line-height: 1.2;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+    }
+
+    .timeline-grid {
+      position: relative;
+      height: 353.5px;
+      overflow: auto;
+      padding-bottom: 40px;
+    }
+
+    .timeline-grid::before,
+    .timeline-grid::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+    }
+
+    .timeline-grid {
+      background-image: repeating-linear-gradient(
+        to right,
+        rgba(0,0,0,0.08) 0,
+        rgba(0,0,0,0.08) 1px,
+        transparent 1px,
+        transparent calc((100% / 19))
+      );
+      background-size: calc(100% + 1px) 100%;
+      background-position: left top;
+    }
+
+    .timeline-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .project-line {
+      position: absolute;
+      height: 6px;
+      border-radius: 4px;
+      background-color: rgba(0, 100, 200, 0.7);
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .project-line:hover {
+      transform: scaleY(1.8);
+      background-color: inherit;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+      z-index: 10;
+    }
+
+    #project-tooltip {
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #333;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      white-space: nowrap;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.15s;
     }
 
     .project-list-title {
@@ -183,7 +290,7 @@
       <nav>
         <ul>
           <li><a href="index.html">首页</a></li>
-          <li><a href="language_map.html" class="active">词汇</a></li>
+          <li><a href="language_map.html" class="active">研究</a></li>
           <li><a href="contribute.html">贡献者</a></li>
         </ul>
       </nav>
@@ -201,9 +308,42 @@
     </div>
   </header>
 
-  <div class="map-title">中国少数民族语言分布地图</div>
+  <div class="map-title">汉藏语分化时间分布信息</div>
   
-  <div id="map-placeholder"></div>
+  <div class="map-timeline-wrapper">
+    <div id="map-placeholder"></div>
+    <div class="timeline-wrapper">
+      <div class="timeline-container" id="timeline-container">
+        <div class="timeline-axis" aria-label="朝代时间轴（X轴）">
+          <div class="dynasty vertical">史前</div>
+          <div class="dynasty vertical">商</div>
+          <div class="dynasty vertical">西周</div>
+          <div class="dynasty vertical">春秋</div>
+          <div class="dynasty vertical">战国</div>
+          <div class="dynasty vertical">秦</div>
+          <div class="dynasty vertical">汉</div>
+          <div class="dynasty vertical">三国</div>
+          <div class="dynasty vertical">晋</div>
+          <div class="dynasty vertical">南北朝</div>
+          <div class="dynasty vertical">隋</div>
+          <div class="dynasty vertical">唐</div>
+          <div class="dynasty vertical">五代十国</div>
+          <div class="dynasty vertical">宋</div>
+          <div class="dynasty vertical">元</div>
+          <div class="dynasty vertical">明</div>
+          <div class="dynasty vertical">清</div>
+          <div class="dynasty vertical">民国</div>
+          <div class="dynasty vertical">现代</div>
+        </div>    
+
+        <div class="timeline-grid" id="timelineGrid"></div>
+      
+        <div class="timeline-hint">*数据以朝代进行断代</div>
+      </div>  
+    </div>
+  </div>
+  
+  <div id="project-tooltip" style="display:none; position:absolute;"></div>
 
   <div class="project-list-title">语言研究项目列表</div>  
 
@@ -260,40 +400,273 @@
         });
     }
 
-    // const map = new AMap.Map('map-placeholder', {
-    //   center: [116.397428, 39.90923],
-    //   zoom: 4,
-    //   dragEnable: true,
-    //   zoomEnable: true,
-    //   doubleClickZoom: true,
-    //   keyboardEnable: true,
-    //   scrollWheel: true,
-    //   touchZoom: true
-    // });
+    const map = new AMap.Map('map-placeholder', {
+      center: [105, 35],
+      zoom: 4,
+      dragEnable: true,
+      zoomEnable: true,
+      doubleClickZoom: true,
+      keyboardEnable: true,
+      scrollWheel: true,
+      touchZoom: true
+    });
+
+    let projectMarkers = [];
+
+    function loadMapMarkers() {
+      projectMarkers.forEach(m => map.remove(m));
+      projectMarkers = [];
+
+      const projects = JSON.parse(localStorage.getItem("projectDrafts") || "[]")
+        .filter(p => p.isPublic && Array.isArray(p.languageCoords));
+
+      if (!projects.length) return;
+
+      const bounds = new AMap.Bounds();
+
+      projects.forEach(p => {
+        p.languageCoords.forEach(lang => {
+          const lng = parseFloat(lang.lng);
+          const lat = parseFloat(lang.lat);
+          if (isNaN(lng) || isNaN(lat)) return;
+
+          const marker = new AMap.Marker({
+            position: [lng, lat],
+            title: `${p.projectName} - ${lang.name}`,
+            map: map
+          });
+
+          marker.on('click', () => highlightProject(p.id));
+
+          projectMarkers.push(marker);
+          bounds.extend([lng, lat]);
+        });
+      });
+
+      map.setFitView();
+    }
+
+    function focusOnProject(projectId) {
+      const projects = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      const project = projects.find(p => p.id === projectId);
+      if (!project || !project.languageCoords) return;
+
+      const validPoints = project.languageCoords
+        .map(l => [parseFloat(l.lng), parseFloat(l.lat)])
+        .filter(([lng, lat]) => !isNaN(lng) && !isNaN(lat));
+
+      if (validPoints.length) {
+        const bounds = new AMap.Bounds();
+        validPoints.forEach(pt => bounds.extend(pt));
+        map.setFitView(validPoints.map(pt => new AMap.Marker({ position: pt })));
+      }
+
+      highlightProject(projectId);
+    }
 
     const tableBody = document.getElementById("project-table-body");
 
-    const exampleProject = {
-        name: "测试",
-        wordCount: 2100,
-        result: "初步时间分化建模完成",
-        region: "新疆",
-        author: "张三",
-        createdAt: "2025-07-21",
-        action: "<a href='#'>查看</a>"
-    };
-    
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-        <td>${exampleProject.name}</td>
-        <td>${exampleProject.wordCount}</td>
-        <td>${exampleProject.result}</td>
-        <td>${exampleProject.region}</td>
-        <td>${exampleProject.author}</td>
-        <td>${exampleProject.createdAt}</td>
-        <td>${exampleProject.action}</td>
-    `;
-    tableBody.appendChild(tr);
+    function renderPublicProjects() {
+      tableBody.innerHTML = "";
+      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      const pub = drafts.filter(d => d.isPublic);
+
+      if (pub.length === 0) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="7" style="text-align:center;">暂无公开项目</td>`;
+        tableBody.appendChild(tr);
+        return;
+      }
+
+      pub.forEach(d => {
+        const name = d.projectName || "未命名项目";
+        const wordCount = Array.isArray(d.vocabList) ? d.vocabList.length : 0;
+        const result = "--";
+        const region = "--";
+        const author = d.author || "未知作者";
+        const createdAt = d.createdAt || "--";
+        const action = `<button type="button" class="view-btn" data-id="${d.id}">查看</button>`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${name}</td>
+          <td>${wordCount}</td>
+          <td>${result}</td>
+          <td>${region}</td>
+          <td>${author}</td>
+          <td>${createdAt}</td>
+          <td>${action}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      tableBody.querySelectorAll(".view-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-id");
+          focusOnProject(id);
+        });
+      });
+    }
+
+    const DYNASTY_RANGES = [
+      { name: "史前", start: -5000, end: -1600 },
+      { name: "商", start: -1600, end: -1046 },
+      { name: "西周", start: -1045, end: -771 },
+      { name: "春秋", start: -770, end: -476 },
+      { name: "战国", start: -475, end: -221 },
+      { name: "秦", start: -221, end: -206 },
+      { name: "汉", start: -206, end: 220 },
+      { name: "三国", start: 220, end: 280 },
+      { name: "晋", start: 266, end: 420 },
+      { name: "南北朝", start: 420, end: 589 },
+      { name: "隋", start: 581, end: 618 },
+      { name: "唐", start: 618, end: 907 },
+      { name: "五代十国", start: 907, end: 960 },
+      { name: "宋", start: 960, end: 1279 },
+      { name: "元", start: 1279, end: 1368 },
+      { name: "明", start: 1368, end: 1644 },
+      { name: "清", start: 1644, end: 1912 },
+      { name: "民国", start: 1912, end: 1949 },
+      { name: "现代", start: 1949, end: 2100 }
+    ];
+
+    function convertToNumber(year, era) {
+      if (year == null || year === "") return null;
+      const n = Number(year);
+      if (!isFinite(n)) return null;
+      return era === "BC" ? -Math.abs(n) : Math.abs(n);
+    }
+
+    function getPublicProjectsWithTime() {
+      const drafts = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+      return drafts
+        .filter(p => p.isPublic && p.projectTimeRange)
+        .map(p => {
+          const t = p.projectTimeRange || {};
+          return {
+            id: p.id,
+            name: p.projectName || "未命名项目",
+            upper: convertToNumber(t.upper, t.upperEra),
+            lower: convertToNumber(t.lower, t.lowerEra),
+            rawRange: t
+          };
+        })
+        .filter(p => p.upper != null || p.lower != null);
+    }
+
+    function mapProjectToDynastyRange(project) {
+      let startDynastyIndex = null;
+      let endDynastyIndex = null;
+
+      const MIN = DYNASTY_RANGES[0].start;
+      const MAX = DYNASTY_RANGES[DYNASTY_RANGES.length-1].end;
+
+      const up = (project.upper == null) ? null : Math.max(project.upper, MIN);
+      const lo = (project.lower == null) ? null : Math.min(project.lower, MAX);
+
+      DYNASTY_RANGES.forEach((dyn, idx) => {
+        if (startDynastyIndex === null && up != null && up >= dyn.start && up <= dyn.end) {
+          startDynastyIndex = idx;
+        }
+        if (endDynastyIndex === null && lo != null && lo >= dyn.start && lo <= dyn.end) {
+          endDynastyIndex = idx;
+        }
+      });
+
+      if (startDynastyIndex == null) startDynastyIndex = 0;
+      if (endDynastyIndex == null) endDynastyIndex = DYNASTY_RANGES.length - 1;
+      if (endDynastyIndex < startDynastyIndex) {
+        const t = startDynastyIndex; startDynastyIndex = endDynastyIndex; endDynastyIndex = t;
+      }
+      return { startDynastyIndex, endDynastyIndex };
+    }
+
+    function drawProjectTimeline() {
+      const grid = document.getElementById("timelineGrid");
+      if (!grid) return;
+
+      grid.innerHTML = "";
+      const projects = getPublicProjectsWithTime();
+      if (!projects.length) {
+        grid.innerHTML = "<div style='text-align:center;color:#777;padding-top:80px;'>暂无带有时间信息的公开项目</div>";
+        return;
+      }
+
+      let currentY = 10;
+
+      projects.forEach((p, idx) => {
+        const raw = p.rawRange || {};
+        const timeText = `${raw.upper ?? ""}${raw.upperEra ?? ""} — ${raw.lower ?? ""}${raw.lowerEra ?? ""}`.trim();
+
+        const { startDynastyIndex, endDynastyIndex } = mapProjectToDynastyRange(p);
+        const startPercent = (startDynastyIndex / DYNASTY_RANGES.length) * 100;
+        const endPercent   = ((endDynastyIndex + 1) / DYNASTY_RANGES.length) * 100;
+        const widthPercent = Math.max(3, endPercent - startPercent);
+
+        const line = document.createElement("div");
+        line.className = "project-line";
+        line.style.left = startPercent + "%";
+        line.style.width = widthPercent + "%";
+        line.style.top = currentY + "px";
+        line.style.backgroundColor = getColor(p.name);
+        line.dataset.projectId = p.id;
+
+        line.addEventListener("mouseenter", (e) => {
+          const tooltip = document.getElementById("project-tooltip");
+          tooltip.style.display = "block";
+          tooltip.style.opacity = "1";
+          tooltip.innerHTML = `<strong>${p.name}</strong><br>${timeText}`;
+        });
+
+        line.addEventListener("mouseleave", () => {
+          const tooltip = document.getElementById("project-tooltip");
+          tooltip.style.display = "none";
+          tooltip.style.opacity = "0";
+        });
+
+        line.addEventListener("mousemove", (e) => {
+          const tooltip = document.getElementById("project-tooltip");
+          tooltip.style.left = e.pageX + 12 + "px";
+          tooltip.style.top = e.pageY + 12 + "px";
+        });
+
+        grid.appendChild(line);
+        currentY += 20;
+      });
+    }
+
+    function highlightProject(projectId) {
+      document.querySelectorAll('.project-line').forEach(line => {
+        if (line.dataset.projectId === projectId) {
+          line.style.boxShadow = '0 0 10px 2px #ff6600';
+          line.style.transform = 'scaleY(2)';
+          line.style.zIndex = 20;
+        } else {
+          line.style.boxShadow = '';
+          line.style.transform = '';
+          line.style.zIndex = '';
+        }
+      });
+    }
+
+    const COLOR_PALETTE = [
+      "#FF5733", "#33C1FF", "#9D33FF", "#33FF57", "#FF33A8",
+      "#FFC300", "#FF5733", "#33FFBD", "#3375FF", "#8E44AD",
+      "#16A085", "#D35400", "#2C3E50", "#C0392B"
+    ];
+
+    function getColor(name) {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const index = Math.abs(hash % COLOR_PALETTE.length);
+      return COLOR_PALETTE[index];
+    }
+
+    renderPublicProjects();
+    drawProjectTimeline();
+    loadMapMarkers();
  });
 </script>
 

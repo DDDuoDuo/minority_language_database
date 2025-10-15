@@ -202,6 +202,18 @@
       cursor: pointer;
     }
 
+    .publish-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .unpublish-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
     .pagination-container {
       display: none;
       justify-content: center;
@@ -228,7 +240,7 @@
       <nav>
         <ul>
           <li><a href="index.html">首页</a></li>
-          <li><a href="language_map.html" class="active">词汇</a></li>
+          <li><a href="language_map.html" class="active">研究</a></li>
           <li><a href="contribute.html">贡献者</a></li>
         </ul>
       </nav>
@@ -346,19 +358,31 @@
     const tbody = document.querySelector("#projectTable tbody");
     const noProjects = document.getElementById("noProjects");
 
-    const totalPages = Math.ceil(drafts.length / pageSize);
-    const start = (currentPage - 1) * pageSize;
-
     tbody.innerHTML = "";
 
-    if (drafts.length === 0) {
+    const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    const myId = (cu && cu.id) || "anonymous";
+
+    let changed = false;
+    drafts.forEach(d => {
+      if (!d.authorId) { d.authorId = (cu && cu.id) || "anonymous"; changed = true; }
+      if (!d.author)   { d.author   = (cu && cu.username) || "未知用户"; changed = true; }
+    });
+    if (changed) localStorage.setItem("projectDrafts", JSON.stringify(drafts));
+
+    const mine = drafts.filter(d => d.authorId === myId);
+
+    const totalPages = Math.ceil(mine.length / pageSize);
+    const start = (currentPage - 1) * pageSize;
+
+    if (mine.length === 0) {
       noProjects.style.display = "block";
+      document.querySelector(".pagination-container").style.display = "none";
       return;
     }
-
     noProjects.style.display = "none";
 
-    drafts.slice(start, start + pageSize).forEach((draft, index) => {
+    mine.slice(start, start + pageSize).forEach((draft, index) => {
       const tr = document.createElement("tr");
       const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
       const userName = (cu && cu.username) || sessionStorage.getItem("username") || "未知用户";
@@ -374,6 +398,9 @@
         <td>
           <button type="button" class="edit-button" data-id="${draft.id}">编辑</button>
           <button type="button" class="delete-button" data-id="${draft.id}">删除</button>
+          <button type="button"
+          class="publish-button" data-id="${draft.id}" ${draft.isPublic ? 'style="display:none;"' : ''}>设为公开</button>
+          <button type="button" class="unpublish-button" data-id="${draft.id}" ${draft.isPublic ? '' : 'style="display:none;"'}>取消公开</button>
         </td>
       `;
 
@@ -407,6 +434,36 @@
       });
     });
 
+    document.querySelectorAll(".publish-button").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const id = e.currentTarget.getAttribute("data-id");
+        const list = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+        const idx = list.findIndex(p => p.id === id);
+        if (idx === -1) return;
+
+        list[idx].isPublic = true;
+
+        localStorage.setItem("projectDrafts", JSON.stringify(list));
+        loadProjectList();
+        alert("项目已设为公开。");
+      });
+    });
+
+    document.querySelectorAll(".unpublish-button").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const id = e.currentTarget.getAttribute("data-id");
+        const list = JSON.parse(localStorage.getItem("projectDrafts") || "[]");
+        const idx = list.findIndex(p => p.id === id);
+        if (idx === -1) return;
+
+        list[idx].isPublic = false;
+
+        localStorage.setItem("projectDrafts", JSON.stringify(list));
+        loadProjectList();
+        alert("项目已取消公开。");
+      });
+    });
+
     document.getElementById("pageIndicator").textContent = `第 ${currentPage} 页`;
     document.getElementById("prevPage").style.display = (currentPage > 1) ? "inline-block" : "none";
     document.getElementById("nextPage").style.display = (currentPage < totalPages) ? "inline-block" : "none";
@@ -416,6 +473,10 @@
   document.getElementById("newProjectBtn").addEventListener("click", () => {
     const newId = "proj_" + Date.now();
     sessionStorage.setItem("editingProjectId", newId);
+    const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    sessionStorage.setItem("pendingAuthorId", (cu && cu.id) || "anonymous");
+    sessionStorage.setItem("pendingAuthorName", (cu && cu.username) || "未知用户");
+
     location.href = `modify_project.html?id=${newId}`;
   });
 

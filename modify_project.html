@@ -443,6 +443,18 @@
       padding: 6px 10px;
     }
 
+    .time-input[readonly] {
+      border: 1px solid #ccc;
+      outline: none;
+      background: #fff;
+      color: #333;
+    }
+    
+    .era-label {
+      padding: 6px 10px;
+      display: inline-block;
+    }
+
     .time-select {
       padding: 6px 10px;
     }
@@ -774,18 +786,12 @@
             目标语言分化时间为 上限
             <span class="time-inline">
               <input type="number" id="projectTimeUpper" class="time-input" placeholder="年份">
-              <select id="projectTimeUpperEra" class="time-select">
-                <option value="BC">BC</option>
-                <option value="AD">AD</option>
-              </select>
+              <span id="projectTimeUpperEra" class="era-label"></span>
             </span>
             至 下限
             <span class="time-inline">
               <input type="number" id="projectTimeLower" class="time-input" placeholder="年份">
-              <select id="projectTimeLowerEra" class="time-select">
-                <option value="BC">BC</option>
-                <option value="AD">AD</option>
-              </select>
+              <span id="projectTimeLowerEra" class="era-label"></span>
             </span>
           </div>
         </div>
@@ -1196,7 +1202,7 @@
       removeBtns.forEach(btn => btn.style.display = (languageContainer.children.length > 2 ? "inline-block" : "none"));
     }
 
-    window.addLanguageInput = function addLanguageInput(value = "", lng = "", lat = "") {
+    function addLanguageInput(value = "", lng = "", lat = "") {
       if (languageContainer.children.length >= 6) {
         alert("最多只能添加6种语言");
         return;
@@ -1222,11 +1228,911 @@
       });
     }
 
+    function getLanguages() {
+      return Array.from(document.querySelectorAll(".language-input"))
+        .map(i => i.value.trim())
+        .filter(Boolean);
+    }
+
+    function getLanguageCoords() {
+      const rows = Array.from(document.querySelectorAll("#language-container .language-group"));
+      return rows.map(row => {
+        const name = row.querySelector(".language-input")?.value.trim() || "";
+        const lng  = row.querySelector(".lng-input")?.value.trim() || "";
+        const lat  = row.querySelector(".lat-input")?.value.trim() || "";
+        return { name, lng, lat };
+      }).filter(x => x.name);
+    }
+
+    function renderTimeConclusion() {
+      const type = document.querySelector('input[name="projectType"]:checked')?.value;
+      const langs = (window.languages || []).filter(Boolean);
+      const el = document.getElementById('timeConclusion');
+      if (!el) return;
+
+      const matchVal = document.querySelector('input[name="matchType"]:checked')?.value;
+      const relaxedVal = document.querySelector('input[name="relaxedType"]:checked')?.value;
+
+      const divisionWord = (matchVal === 'partial' && relaxedVal === 'branchOnly') ? '已全分化' : '未分化';
+
+      if (!type || langs.length === 0) {
+        el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
+        return;
+      }
+
+      const A = langs[0] || 'A';
+      const rest = langs.slice(1).join('、') || 'B、C、D';
+
+      if (type === '1') {
+        el.textContent = `所以在该时间区间 ${A} 与 ${rest} ${divisionWord}。`;
+      } else if (type === '2') {
+        el.textContent = `所以在该时间区间 ${A} ${rest} ${divisionWord}。`;
+      } else if (type === '3') {
+        el.textContent = `所以在该时间区间 ${A} 的不同方言${divisionWord}。`;
+      } else {
+        el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
+      }
+    }
+
+    function eraYearToNumber(year, era) {
+      if (year === '' || year == null) return null;
+      const n = Number(year);
+      if (!isFinite(n)) return null;
+      return (era === 'BC') ? -Math.abs(n) : Math.abs(n);
+    }
+
+    function numberToEraYear(n) {
+      if (n == null) return { year: '', era: 'BC' };
+      return n < 0 ? { year: Math.abs(n), era: 'BC' } : { year: n, era: 'AD' };
+    }
+
+    function sortRange(a, b) {
+      const x = (a == null) ? Infinity : a;
+      const y = (b == null) ? Infinity : b;
+      return x - y;
+    }
+
+    function normalizeTimeRange(raw) {
+      const u = eraYearToNumber(raw.upper, raw.upperEra);
+      const l = eraYearToNumber(raw.lower, raw.lowerEra);
+      if (u == null && l == null) return null;
+
+      let a = (u != null) ? u : l;
+      let b = (l != null) ? l : u;
+
+      let early = Math.min(a, b);
+      let late  = Math.max(a, b);
+
+      const up  = numberToEraYear(early);
+      const low = numberToEraYear(late);
+      return { upper: up.year, upperEra: up.era, lower: low.year, lowerEra: low.era, early, late };
+    }
+
+    function computeSuggestedProjectTime(vocabData) {
+      if (!Array.isArray(vocabData) || vocabData.length === 0) return null;
+
+      let minima = [], maxima = [];
+
+      for (const v of vocabData) {
+        const t = v?.timeInfo || v?.timeRange || null;
+        if (!t) continue;
+
+        const upper = eraYearToNumber(t.upper, t.upperEra);
+        const lower = eraYearToNumber(t.lower, t.lowerEra);
+
+        if (upper != null) minima.push(upper);
+        if (lower != null) maxima.push(lower);
+      }
+
+      if (minima.length === 0 && maxima.length === 0) {
+        return null;
+      }
+
+      const earliest = minima.length ? Math.min(...minima) : (maxima.length ? Math.min(...maxima) : null);
+      const latest   = maxima.length ? Math.max(...maxima) : earliest;
+
+      return normalizeTimeRange({
+        upper: numberToEraYear(earliest).year,
+        upperEra: numberToEraYear(earliest).era,
+        lower: numberToEraYear(latest).year,
+        lowerEra: numberToEraYear(latest).era
+      });
+    }
+
+    function applyNormalizedProjectTime(suggest) {
+      const upEl  = document.getElementById('projectTimeUpper');
+      const upEEl = document.getElementById('projectTimeUpperEra');
+      const loEl  = document.getElementById('projectTimeLower');
+      const loEEl = document.getElementById('projectTimeLowerEra');
+
+      if (!suggest) return;
+
+      upEl.value  = suggest.upper;
+      upEEl.value = suggest.upperEra;
+      loEl.value  = suggest.lower;
+      loEEl.value = suggest.lowerEra;
+
+      if (upEEl) upEEl.textContent = suggest.upperEra;
+      if (loEEl) loEEl.textContent = suggest.lowerEra;
+    }
+
+    function renderWordsForCategory(selectedCategory) {
+      const host = document.getElementById('wordSelectHost');
+      if (!host) return;
+
+      if (selectedCategory === '其他') {
+        if (host.firstElementChild && host.firstElementChild.tagName.toLowerCase() === 'input') {
+          const input = host.firstElementChild;
+          if (window.selectedWord) input.value = window.selectedWord;
+          return;
+        }
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'customWordInput';
+        input.placeholder = '请输入词汇';
+        input.className = 'custom-word-input';
+        host.replaceChildren(input);
+        if (window.selectedWord) input.value = window.selectedWord;
+
+        input.addEventListener('input', () => {
+          window.selectedWord = input.value.trim();
+        });
+        return;
+      }
+
+      let select = host.firstElementChild;
+      if (!select || select.tagName.toLowerCase() !== 'select') {
+        select = document.createElement('select');
+        select.id = 'wordSelect';
+        host.replaceChildren(select);
+      }
+
+      const list = (window.wordOptions && window.wordOptions[selectedCategory]) ? window.wordOptions[selectedCategory] : [];
+
+      select.innerHTML = `<option value="">请选择词汇</option>`;
+      list.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = w;
+        select.appendChild(opt);
+      });
+
+      select.onchange = () => {
+        window.selectedWord = select.value.trim();
+      };
+    }
+
+    function setWordSelection(word) {
+      const host = document.getElementById('wordSelectHost');
+      if (!host || !host.firstElementChild) return;
+      const el = host.firstElementChild;
+
+      if (el.tagName.toLowerCase() === 'select') {
+        const opt = Array.from(el.options).find(o => o.value === word);
+        if (opt) el.value = word;
+      } else if (el.tagName.toLowerCase() === 'input') {
+        el.value = word || '';
+      }
+      window.selectedWord = word || '';
+    }
+
+    const maxRows = 6;
+
+    function addDialectRow(valueDialect = "", valueForm = "") {
+      const wordBody = document.getElementById("wordBody");
+      if (!wordBody) return;
+
+      const base = (window.languages || []).length;
+      const currentCustom = wordBody.querySelectorAll("tr.custom-dialect-row").length;
+      const remaining = Math.max(0, maxRows - base);
+
+      if (currentCustom >= remaining) {
+        alert("最多只能添加6种语言");
+        return;
+      }
+
+      const tr = document.createElement("tr");
+      tr.className = "custom-dialect-row";
+
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="custom-dialect" placeholder="输入语言名称" value="${valueDialect}">
+        </td>
+        <td>
+          <div class="dialect-form-cell">
+            <input type="text" class="syllable-input" placeholder="输入音节" value="${valueForm}">
+            <button type="button" class="remove-language">移除</button>
+          </div>
+        </td>
+      `;
+
+      document.getElementById("wordBody").appendChild(tr);
+      
+      const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
+      const hint = document.getElementById('wordHint');
+      hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
+
+      tr.querySelector(".remove-language").addEventListener("click", () => {
+        tr.remove();
+        const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
+        hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
+      });
+    }
+
+    function collectSyllablesFromPage2() {
+      const displayEl = document.getElementById('currentWordDisplay');
+      const tbody = document.getElementById('wordBody');
+
+      if (!displayEl || !tbody) return null;
+
+      const word = displayEl.textContent.trim();
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+
+      const wordForms = rows.map(row => {
+        const dialectCell = row.children[0];
+        const formCell    = row.children[1];
+
+        const dialect = dialectCell.querySelector('input')
+          ? dialectCell.querySelector('input').value.trim()
+          : dialectCell.textContent.trim();
+
+        const wordFormInput = formCell.querySelector('input');
+        const wordForm = wordFormInput ? wordFormInput.value.trim() : '';
+
+        return { dialect, wordForm };
+      })
+      .filter(x => x.dialect || x.wordForm);
+
+      if (!word && wordForms.length === 0) return null;
+
+      return { wordForms };
+    }
+
+    function collectComparisonFromPage3() {
+      const head = document.getElementById('compareHeadRow');
+      const body = document.getElementById('compareBody');
+      if (!head || !body) return null;
+
+      const ths = Array.from(head.querySelectorAll('th'));
+      const langs = ths.slice(2).map(th => th.textContent.trim());
+
+      const rows = [];
+      Array.from(body.querySelectorAll('tr')).forEach((tr, idx) => {
+        const tds = Array.from(tr.children);
+        const wordEl = tds[0].querySelector('input') || tds[0].querySelector('span');
+        const word = (wordEl?.value ?? wordEl?.textContent ?? '').trim();
+
+        let feature = [];
+        const cbs = tds[1].querySelectorAll('input[type="checkbox"]');
+        if (cbs.length) {
+          feature = Array.from(cbs)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        } else {
+          feature = [];
+        }
+
+        const forms = {};
+        langs.forEach((lang, i) => {
+          const cell = tds[i + 2];
+          const el = cell.querySelector('input') || cell.querySelector('span');
+          forms[lang] = (el?.value ?? el?.textContent ?? '').trim();
+        });
+
+        rows.push({ word, feature, forms, readonly: idx === 0 });
+      });
+
+      return { rows };
+    }
+
+    function getSelectedWord() {
+      const host = document.getElementById('wordSelectHost');
+      if (!host) return '';
+      const el = host.firstElementChild;
+      if (!el) return '';
+      if (el.tagName.toLowerCase() === 'select') {
+        return (el.value || '').trim();
+      }
+      if (el.tagName.toLowerCase() === 'input') {
+        return (el.value || '').trim();
+      }
+      return '';
+    }
+
+    function populateSyllablePage(word, wordData) {
+      const wordBody = document.getElementById("wordBody");
+      const wordLabel = document.getElementById("currentWordDisplay");
+
+      if (!wordBody || !wordLabel) return;
+
+      wordLabel.textContent = word || "暂无词汇";
+
+      if (wordData === "1") return;
+
+      const savedMap = new Map();
+      if (Array.isArray(wordData?.wordForms)) {
+        wordData.wordForms.forEach(({ dialect, wordForm }) => {
+          if (dialect) savedMap.set(dialect, wordForm || "");
+        });
+      }
+
+      wordBody.innerHTML = "";
+
+      const langs = (window.languages && Array.isArray(window.languages)) ? window.languages : [];
+
+      langs.forEach(lang => {
+        const tr = document.createElement("tr");
+
+        const tdDialect = document.createElement("td");
+        tdDialect.textContent = lang;
+        tdDialect.classList.add("readonly-dialect");
+
+        const tdForm = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "syllable-input";
+        input.placeholder = "输入音节";
+        input.dataset.lang = lang;
+        input.value = savedMap.get(lang) ?? "";
+        tdForm.appendChild(input);
+
+        tr.appendChild(tdDialect);
+        tr.appendChild(tdForm);
+        wordBody.appendChild(tr);
+      });
+
+      let remaining = Math.max(0, maxRows - langs.length);
+
+      let customForms = [];
+      if (Array.isArray(wordData?.wordForms)) {
+        customForms = wordData.wordForms.filter(({ dialect }) => !langs.includes(dialect));
+      }
+
+      let trimmed = false;
+      if (customForms.length > remaining) {
+        customForms = customForms.slice(0, remaining);
+        trimmed = true;
+      }
+
+      customForms.forEach(({ dialect, wordForm }) => {
+        const tr = document.createElement("tr");
+        tr.classList.add("custom-dialect-row");
+
+        const tdDialect = document.createElement("td");
+        const inpDia = document.createElement("input");
+        inpDia.type = "text";
+        inpDia.className = "custom-dialect";
+        inpDia.placeholder = "输入语言名称";
+        inpDia.value = dialect || "";
+        tdDialect.appendChild(inpDia);
+
+        const tdForm = document.createElement("td");
+        const wrapper = document.createElement("div");
+        wrapper.className = "dialect-form-cell";
+
+        const inpForm = document.createElement("input");
+        inpForm.type = "text";
+        inpForm.className = "syllable-input";
+        inpForm.placeholder = "输入音节";
+        inpForm.value = wordForm || "";
+
+        const btnRemove = document.createElement("button");
+        btnRemove.type = "button";
+        btnRemove.className = "remove-language";
+        btnRemove.textContent = "移除";
+        btnRemove.addEventListener("click", () => {
+          tr.remove();
+          const hint = document.getElementById('wordHint');
+          const base = (window.languages || []).length;
+          const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
+          hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
+        });
+
+        wrapper.appendChild(inpForm);
+        wrapper.appendChild(btnRemove);
+        tdForm.appendChild(wrapper);
+
+        tr.appendChild(tdDialect);
+        tr.appendChild(tdForm);
+        wordBody.appendChild(tr);
+      });
+
+      if (trimmed && typeof window.editingVocabIndex === "number" && window.editingVocabIndex >= 0 && window.vocabData?.[window.editingVocabIndex]) {
+        const newWordForms = [
+          ...langs.map(lang => ({ dialect: lang, wordForm: savedMap.get(lang) ?? "" })),
+          ...customForms
+        ];
+        const prev = window.vocabData[window.editingVocabIndex];
+        window.vocabData[window.editingVocabIndex] = {
+          ...prev,
+          wordData: { syllable: savedSyllable, wordForms: newWordForms }
+        };
+      }
+
+      const hint = document.getElementById('wordHint');
+      const base = (window.languages || []).length;
+      const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
+      hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
+
+      window.dialectRows = document.querySelectorAll("#wordBody tr").length;
+
+      setupMatchSection();
+    };
+
+    function setupMatchSection() {
+      const fullNote = document.getElementById('fullNote');
+      const relaxedOptions = document.getElementById('relaxedOptions');
+      const relaxedNote = document.getElementById('relaxedNote');
+
+      document.querySelectorAll('input[name="matchType"]').forEach(r => {
+        r.addEventListener('change', () => {
+          const val = document.querySelector('input[name="matchType"]:checked')?.value;
+
+          if (val === 'full') {
+            fullNote.classList.remove('hidden');
+            relaxedOptions.classList.add('hidden');
+            relaxedNote.classList.add('hidden');
+            document.querySelectorAll('input[name="relaxedType"]').forEach(x => x.checked = false);
+          } else if (val === 'partial') {
+            fullNote.classList.add('hidden');
+            relaxedOptions.classList.remove('hidden');
+            relaxedNote.classList.add('hidden');
+          }
+        });
+      });
+
+      document.querySelectorAll('input[name="relaxedType"]').forEach(r => {
+        r.addEventListener('change', () => {
+          const val = document.querySelector('input[name="relaxedType"]:checked')?.value;
+          if (val === 'branchOnly') {
+            relaxedNote.classList.remove('hidden');
+          } else {
+            relaxedNote.classList.add('hidden');
+          }
+        });
+      });
+    };
+
+    function populateTimeRange(entry) {
+      const word = getSelectedWord();
+      const wordSpan = document.getElementById('timeWordDisplay');
+      if (wordSpan) {
+        wordSpan.textContent = word || '暂无词汇';
+        wordSpan.style.fontWeight = 'bold';
+      }
+
+      const eventType = entry?.timeInfo?.eventType || '使用';
+      const lower = entry?.timeInfo?.lower ?? 5500;
+      const lowerEra = entry?.timeInfo?.lowerEra || 'BC';
+      const upper = entry?.timeInfo?.upper ?? 4000;
+      const upperEra = entry?.timeInfo?.upperEra || 'BC';
+
+      const selType = document.getElementById('wordEventType');
+      const inpLower = document.getElementById('timeLower');
+      const selLowerEra = document.getElementById('timeLowerEra');
+      const inpUpper = document.getElementById('timeUpper');
+      const selUpperEra = document.getElementById('timeUpperEra');
+
+      if (selType) selType.value = eventType;
+      if (inpLower) inpLower.value = lower;
+      if (selLowerEra) selLowerEra.value = lowerEra;
+      if (inpUpper) inpUpper.value = upper;
+      if (selUpperEra) selUpperEra.value = upperEra;
+    };
+
+    const MAX_COMPARE_ROWS = 4;
+
+    function buildCompareHead() {
+      const head = document.getElementById('compareHeadRow');
+      head.innerHTML = '';
+
+      const thWord = document.createElement('th'); thWord.textContent = '词汇';
+      const thFeat = document.createElement('th'); thFeat.textContent = '音韵对应';
+      head.appendChild(thWord);
+      head.appendChild(thFeat);
+
+      const dialects = getDialectsFromPage2DOM();
+      dialects.forEach(lang => {
+        const th = document.createElement('th');
+        th.textContent = lang;
+        head.appendChild(th);
+      });
+    };
+
+    function addCompareRow({ word = '', feature = '', forms = {}, readonly = false } = {}) {
+      const tbody = document.getElementById('compareBody');
+      const hint = document.getElementById('compareHint');
+      const currentWords = tbody.querySelectorAll('tr').length;
+      hint.textContent = `当前词汇数：${currentWords}；最多可再添加 ${MAX_COMPARE_ROWS - currentWords} 行`;
+      
+      if (!readonly && currentWords >= MAX_COMPARE_ROWS) {
+        alert('最多只能添加4个词汇');
+        return;
+      }
+
+      const dialects = getDialectsFromPage2DOM();
+
+      const tr = document.createElement('tr');
+
+      const tdWord = document.createElement('td');
+      if (readonly) {
+        const span = document.createElement('span');
+        span.className = 'compare-readonly';
+        span.textContent = word || '';
+        tdWord.appendChild(span);
+      } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'compare-input';
+        input.placeholder = "参考词汇";
+        input.value = word || '';
+        tdWord.appendChild(input);
+      }
+      tr.appendChild(tdWord);
+
+      const tdFeat = document.createElement('td');
+      if (readonly) {
+        const span = document.createElement('span');
+        span.className = 'compare-readonly';
+        span.textContent = '';
+        tdFeat.appendChild(span);
+      } else {
+        const wrap = document.createElement('div');
+        wrap.className = 'feature-options';
+
+        const normalizeFeature = (f) => {
+          if (Array.isArray(f)) return f;
+          if (typeof f === 'string' && f.trim()) {
+            return f.split(/[，,\s]+/).filter(Boolean);
+          }
+          return [];
+        };
+        const selected = new Set(normalizeFeature(feature));
+
+        ['声母','韵母','声调'].forEach(text => {
+          const label = document.createElement('label');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = text;
+          if (selected.has(text)) cb.checked = true;
+          label.appendChild(cb);
+          label.appendChild(document.createTextNode(text));
+          wrap.appendChild(label);
+        });
+
+        tdFeat.appendChild(wrap);
+      }
+      tr.appendChild(tdFeat);
+
+      dialects.forEach(lang => {
+        const td = document.createElement('td');
+        const val = forms?.[lang] ?? '';
+        if (readonly) {
+          const span = document.createElement('span');
+          span.className = 'compare-readonly';
+          span.textContent = val;
+          td.appendChild(span);
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'compare-input';
+          input.placeholder = "音节";
+          input.value = val;
+          td.appendChild(input);
+        }
+        tr.appendChild(td);
+      });
+
+      if (!readonly) {
+        const btnRemove = document.createElement('button');
+        btnRemove.type = 'button';
+        btnRemove.className = 'delete-button';
+        btnRemove.textContent = '移除';
+        btnRemove.style.marginTop = '6px';
+        tr.children[0].appendChild(btnRemove);
+        btnRemove.addEventListener('click', () => {
+          tr.remove();
+          const total = tbody.querySelectorAll('tr').length;
+          hint.textContent = `当前词汇数：${total}；最多可再添加 ${MAX_COMPARE_ROWS - total} 行`;
+        });
+      }
+
+      document.getElementById('compareBody').appendChild(tr);
+
+      const total = tbody.querySelectorAll('tr').length;
+      hint.textContent = `当前词汇数：${total}；最多可再添加 ${MAX_COMPARE_ROWS - total} 行`;
+    }
+
+    function populateBorrowPage(entry) {
+      const box1 = document.getElementById('borrowSourceGroup');
+      const box2 = document.getElementById('borrowChangeGroup');
+      type = document.querySelector('input[name="originType"]:checked')?.value;
+      if (!type) {
+        const ex = document.querySelector('input[name="explainable"]:checked')?.value; // yes/no
+        const cg = document.querySelector('input[name="cognate"]:checked')?.value;     // yes/no
+        if (ex && cg && ex !== cg) {
+          type = (ex === 'yes' && cg === 'no') ? '借词' : '固有词';
+        }
+      }
+
+      if (!box1 || !box2) return;
+
+      if (type !== '借词') {
+        box1.classList.add('hidden');
+        box2.classList.add('hidden');
+        return;
+      }
+      box1.classList.remove('hidden');
+      box2.classList.remove('hidden');
+
+      document.querySelectorAll('input[name="borrowSource"]').forEach(x => x.checked = false);
+      document.querySelectorAll('input[name="borrowChange"]').forEach(x => x.checked = false);
+
+      const srcOther = document.getElementById('borrowSourceOther');
+      if (entry.borrowSource) {
+        const r = document.querySelector(`input[name="borrowSource"][value="${entry.borrowSource}"]`);
+        if (r) {
+          r.checked = true;
+          r.dispatchEvent(new Event('change'));
+        }
+      }
+      if (entry.borrowSource === '其他' && srcOther) {
+        srcOther.value = entry.borrowSourceOther || '';
+        srcOther.disabled = false;
+      }
+
+      const changeOther = document.getElementById('borrowChangeOther');
+      if (entry.borrowChange) {
+        const r = document.querySelector(`input[name="borrowChange"][value="${entry.borrowChange}"]`);
+        if (r) {
+          r.checked = true;
+          r.dispatchEvent(new Event('change'));
+        }
+      }
+      if (entry.borrowChange === '其他' && changeOther) {
+        changeOther.value = entry.borrowChangeOther || '';
+        changeOther.disabled = false;
+      }
+    };
+
+    function collectBorrowFromLastPage() {
+      const showSource = !document.getElementById('borrowSourceGroup')?.classList.contains('hidden');
+      const showChange = !document.getElementById('borrowChangeGroup')?.classList.contains('hidden');
+
+      if (!showSource && !showChange) {
+        return {
+          borrowSource: null,
+          borrowSourceOther: null,
+          borrowChange: null,
+          borrowChangeOther: null
+        };
+      }
+
+      const src = document.querySelector('input[name="borrowSource"]:checked')?.value || null;
+      const srcOtherVal = document.getElementById('borrowSourceOther')?.value?.trim() || null;
+
+      const chg = document.querySelector('input[name="borrowChange"]:checked')?.value || null;
+      const chgOtherVal = document.getElementById('borrowChangeOther')?.value?.trim() || null;
+
+      return {
+        borrowSource: src,
+        borrowSourceOther: (src === '其他' ? (srcOtherVal || null) : null),
+        borrowChange: chg,
+        borrowChangeOther: (chg === '其他' ? (chgOtherVal || null) : null)
+      };
+    }
+
+    function collectTimeFromLastPage() {
+      const eventType = document.getElementById('wordEventType')?.value || '使用';
+      const lower = document.getElementById('timeLower')?.value;
+      const lowerEra = document.getElementById('timeLowerEra')?.value || 'BC';
+      const upper = document.getElementById('timeUpper')?.value;
+      const upperEra = document.getElementById('timeUpperEra')?.value || 'BC';
+
+      const toNum = v => (v === '' || v == null) ? null : Number(v);
+
+      return {
+        eventType,
+        lower: toNum(lower),
+        lowerEra,
+        upper: toNum(upper),
+        upperEra
+      };
+    }
+
+    function getDialectsFromPage2DOM() {
+      const tbody = document.getElementById('wordBody');
+      if (!tbody) return [];
+
+      const dialects = [];
+
+      tbody.querySelectorAll('tr:not(.custom-dialect-row)').forEach(tr => {
+        const t0 = tr.children?.[0];
+        const name = t0 ? t0.textContent.trim() : '';
+        if (name) dialects.push(name);
+      });
+
+      tbody.querySelectorAll('tr.custom-dialect-row').forEach(tr => {
+        const inp = tr.querySelector('td:first-child input.custom-dialect');
+        const name = inp ? inp.value.trim() : '';
+        if (name) dialects.push(name);
+      });
+
+      return Array.from(new Set(dialects));
+    }
+
+    function populateComparisonPage(word, wordData, compData) {
+      buildCompareHead();
+      const dialects = getDialectsFromPage2DOM();
+
+      const map = new Map();
+      if (Array.isArray(wordData?.wordForms)) {
+        wordData.wordForms.forEach(({ dialect, wordForm }) => {
+          if (dialect) map.set(dialect, wordForm || '');
+        });
+      }
+
+      const tbody = document.getElementById('compareBody');
+      tbody.innerHTML = '';
+
+      const formsObj = {};
+      dialects.forEach(lang => { formsObj[lang] = map.get(lang) ?? ''; });
+
+      addCompareRow({
+        word: word || '',
+        feature: '',
+        forms: formsObj,
+        readonly: true
+      });
+
+      if (Array.isArray(compData?.rows) && compData.rows.length > 1) {
+        compData.rows.slice(1).forEach(row => {
+          const adaptedForms = {};
+          dialects.forEach(lang => {
+            adaptedForms[lang] = row.forms?.[lang] ?? '';
+          });
+          addCompareRow({
+            word: row.word || '',
+            feature: row.feature || '',
+            forms: adaptedForms,
+            readonly: false
+          });
+        });
+      }
+
+      const hint = document.getElementById('compareHint');
+      const total = tbody.querySelectorAll('tr').length;
+      hint.textContent = `当前词汇数：${total}；最多可再添加 ${MAX_COMPARE_ROWS - total} 行`;
+    };
+
+    function generateCompareCSVFromEntry(entry) {
+      const rows = Array.isArray(entry?.compData) ? entry.compData : [];
+      if (!rows.length) return "词汇,音韵对应\n";
+
+      const langOrder = [];
+      rows.forEach(r => {
+        const forms = r?.forms || {};
+        Object.keys(forms).forEach(k => { if (!langOrder.includes(k)) langOrder.push(k); });
+      });
+
+      const header = ["词汇", "音韵对应", ...langOrder];
+
+      const lines = [header.join(",")];
+      rows.forEach(r => {
+        const word = (r?.word ?? "").toString();
+        const feature = Array.isArray(r?.feature) ? r.feature.join("、") : (r?.feature ?? "");
+        const forms = r?.forms || {};
+        const cols = [word, feature, ...langOrder.map(lang => (forms[lang] ?? ""))];
+
+        const esc = (s) => {
+          const str = (s == null) ? "" : String(s);
+          return /[",\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
+        };
+
+        lines.push(cols.map(esc).join(","));
+      });
+
+      return lines.join("\n");
+    }
+
+    function textToCsvDataUrl(text) {
+      return "data:text/csv;charset=utf-8," + encodeURIComponent(text || "");
+    }
+
+    function downloadCSV(filename, rows) {
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      const csv = rows.map(r =>
+        r.map(cell => {
+          const s = (cell ?? '').toString();
+          if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+          return s;
+        }).join(',')
+      ).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function buildVocabListCSV(data) {
+      const header = [
+        '词项','历史层次','完全普遍对应','不完全普遍对应','放宽的完全普遍对应',
+        '时间信息','证据词汇','录入时间'
+      ];
+      const lines = [header];
+
+      (data || []).forEach(item => {
+        const full = item?.match?.type === 'full' || item?.fullMatch === true ? '是' : '否';
+        const partial = item?.match?.type === 'partial' || item?.partialMatch === true ? '是' : '否';
+
+        let relaxed = '否';
+        if (item?.relaxedMatch === true || item?.match?.relaxedType) relaxed = '是';
+
+        const t = item?.timeInfo;
+        const timeText = t
+          ? `${(t.lower ?? '')} ${(t.lowerEra ?? '')} — ${(t.upper ?? '')} ${(t.upperEra ?? '')}`.trim()
+          : '--';
+
+        const evidenceText = item?.evidence ? item.evidence : '--';
+
+        lines.push([
+          item?.word ?? '--',
+          item?.level ?? '--',
+          full,
+          partial,
+          relaxed,
+          timeText || '--',
+          evidenceText,
+          item?.recordedAt ?? '--'
+        ]);
+      });
+
+      return lines;
+    }
+
+    function buildAllVocabsEvidenceCSV(data, projectLangs = []) {
+      const out = [];
+
+      (data || []).forEach((v, idx) => {
+        const word = v?.word ?? `词${idx+1}`;
+        const langs = Array.isArray(projectLangs) ? projectLangs : [];
+
+        const header = ['词汇','音韵对应', ...langs];
+        out.push(header);
+
+        const rows = v?.compData?.rows || [];
+        rows.forEach((r, rIdx) => {
+          const featText = Array.isArray(r?.feature) ? r.feature.join(';') : (r?.feature || '');
+          const line = [
+            rIdx === 0 ? (r?.word || word) : (r?.word || ''),
+            featText
+          ];
+
+          langs.forEach(L => {
+            line.push( (r?.forms?.[L] ?? '') );
+          });
+
+          out.push(line);
+        });
+
+        out.push(['']);
+      });
+
+      return out;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-        if (!Auth.isLoggedIn()) {
+      if (!Auth.isLoggedIn()) {
         window.location.href = "index.html?login=true";
         return;
       }
+      const currentUser = Auth.getCurrentUser();
 
       const urlParams = new URLSearchParams(window.location.search);
       let projectId = urlParams.get("id");
@@ -1259,6 +2165,11 @@
       const treeFileActions = document.getElementById("treeFileActions");
 
       if (existing) {
+        if (existing && currentUser && existing.authorId !== currentUser.id) {
+            window.location.href = "projects.html";
+            return;
+        }
+
         document.getElementById("infoPageTitle").textContent = "编辑项目";
         document.getElementById("vocabPageTitle").textContent = "编辑项目";
         document.getElementById("projectName").value = existing.projectName || "未命名项目";
@@ -1289,125 +2200,16 @@
           treeFileActions.style.display = "flex";
         }
 
-        if (existing?.projectTimeRange) {
-          const ptr = existing.projectTimeRange;
-          const up = document.getElementById('projectTimeUpper');
-          const upEra = document.getElementById('projectTimeUpperEra');
-          const low = document.getElementById('projectTimeLower');
-          const lowEra = document.getElementById('projectTimeLowerEra');
-
-          if (up) up.value = ptr.upper ?? '';
-          if (upEra) upEra.value = ptr.upperEra || 'BC';
-          if (low) low.value = ptr.lower ?? '';
-          if (lowEra) lowEra.value = ptr.lowerEra || 'BC';
-        }
-
         vocabData = existing.vocabList || [];
         loadVocabList(vocabData);
-      }
-
-      languageContainer = document.getElementById("language-container");
-
-      window.getLanguages = function getLanguages() {
-        return Array.from(document.querySelectorAll(".language-input"))
-          .map(i => i.value.trim())
-          .filter(Boolean);
-      }
-
-      window.getLanguageCoords = function getLanguageCoords() {
-        const rows = Array.from(document.querySelectorAll("#language-container .language-group"));
-        return rows.map(row => {
-          const name = row.querySelector(".language-input")?.value.trim() || "";
-          const lng  = row.querySelector(".lng-input")?.value.trim() || "";
-          const lat  = row.querySelector(".lat-input")?.value.trim() || "";
-          return { name, lng, lat };
-        }).filter(x => x.name);
+        const suggest = computeSuggestedProjectTime(vocabData);
+        if (suggest) {
+            applyNormalizedProjectTime(suggest);
+        }
       }
 
       window.languages = getLanguages();
-
-      window.renderTimeConclusion = function renderTimeConclusion() {
-        const type = document.querySelector('input[name="projectType"]:checked')?.value;
-        const langs = (window.languages || []).filter(Boolean);
-        const el = document.getElementById('timeConclusion');
-        if (!el) return;
-
-        const matchVal = document.querySelector('input[name="matchType"]:checked')?.value;
-        const relaxedVal = document.querySelector('input[name="relaxedType"]:checked')?.value;
-
-        const divisionWord = (matchVal === 'partial' && relaxedVal === 'branchOnly') ? '已全分化' : '未分化';
-
-        if (!type || langs.length === 0) {
-          el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
-          return;
-        }
-
-        const A = langs[0] || 'A';
-        const rest = langs.slice(1).join('、') || 'B、C、D';
-
-        if (type === '1') {
-          el.textContent = `所以在该时间区间 ${A} 与 ${rest} ${divisionWord}。`;
-        } else if (type === '2') {
-          el.textContent = `所以在该时间区间 ${A} ${rest} ${divisionWord}。`;
-        } else if (type === '3') {
-          el.textContent = `所以在该时间区间 ${A} 的不同方言${divisionWord}。`;
-        } else {
-          el.textContent = `所以在该时间区间相关语言${divisionWord}。`;
-        }
-      }
-
-      window.eraYearToNumber = function eraYearToNumber(year, era) {
-        if (year === '' || year == null) return null;
-        const n = Number(year);
-        if (!isFinite(n)) return null;
-        return (era === 'BC') ? -Math.abs(n) : Math.abs(n);
-      }
-
-      window.numberToEraYear = function numberToEraYear(n) {
-        if (n == null) return { era: 'BC', year: '' };
-        return n < 0 ? { era: 'BC', year: Math.abs(n) } : { era: 'AD', year: Math.abs(n) };
-      }
-
-      window.computeSuggestedProjectTime = function computeSuggestedProjectTime(vocabList) {
-        if (!Array.isArray(vocabList) || vocabList.length === 0) return null;
-
-        let minUpper = null;
-        let maxLower = null;
-
-        vocabList.forEach(v => {
-          const t = v?.timeInfo;
-          if (!t) return;
-          const upNum  = eraYearToNumber(t.upper, t.upperEra);
-          const lowNum = eraYearToNumber(t.lower, t.lowerEra);
-          if (upNum != null)  minUpper = (minUpper == null) ? upNum  : Math.min(minUpper, upNum);
-          if (lowNum != null) maxLower = (maxLower == null) ? lowNum : Math.max(maxLower, lowNum);
-        });
-
-        if (minUpper == null && maxLower == null) return null;
-
-        const up = numberToEraYear(minUpper);
-        const low = numberToEraYear(maxLower);
-        return {
-          upper: up.year || '',
-          upperEra: up.era,
-          lower: low.year || '',
-          lowerEra: low.era
-        };
-      }
-
-      window.prefillProjectTimeIfEmpty = function prefillProjectTimeIfEmpty(suggest) {
-        if (!suggest) return;
-        const up   = document.getElementById('projectTimeUpper');
-        const upE  = document.getElementById('projectTimeUpperEra');
-        const low  = document.getElementById('projectTimeLower');
-        const lowE = document.getElementById('projectTimeLowerEra');
-        if (!up || !upE || !low || !lowE) return;
-
-        if (!up.value)   up.value   = suggest.upper ?? '';
-        if (!upE.value)  upE.value  = suggest.upperEra || 'BC';
-        if (!low.value)  low.value  = suggest.lower ?? '';
-        if (!lowE.value) lowE.value = suggest.lowerEra || 'BC';
-      }
+      languageContainer = document.getElementById("language-container");
 
       languageContainer.addEventListener("input", () => {
         window.languages = getLanguages();
@@ -1560,352 +2362,15 @@
           }
         });
 
-      window.renderWordsForCategory = function renderWordsForCategory(selectedCategory) {
-        const host = document.getElementById('wordSelectHost');
-        if (!host) return;
-
-        if (selectedCategory === '其他') {
-          if (host.firstElementChild && host.firstElementChild.tagName.toLowerCase() === 'input') {
-            const input = host.firstElementChild;
-            if (window.selectedWord) input.value = window.selectedWord;
-            return;
-          }
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.id = 'customWordInput';
-          input.placeholder = '请输入词汇';
-          input.className = 'custom-word-input';
-          host.replaceChildren(input);
-          if (window.selectedWord) input.value = window.selectedWord;
-
-          input.addEventListener('input', () => {
-            window.selectedWord = input.value.trim();
-          });
-          return;
-        }
-
-        let select = host.firstElementChild;
-        if (!select || select.tagName.toLowerCase() !== 'select') {
-          select = document.createElement('select');
-          select.id = 'wordSelect';
-          host.replaceChildren(select);
-        }
-
-        const list = (window.wordOptions && window.wordOptions[selectedCategory]) ? window.wordOptions[selectedCategory] : [];
-
-        select.innerHTML = `<option value="">请选择词汇</option>`;
-        list.forEach(w => {
-          const opt = document.createElement('option');
-          opt.value = w;
-          opt.textContent = w;
-          select.appendChild(opt);
-        });
-
-        select.onchange = () => {
-          window.selectedWord = select.value.trim();
-        };
-      }
-
       document.querySelectorAll('input[name="category"]').forEach(radio => {
         radio.addEventListener('change', () => {
           renderWordsForCategory(radio.value);
         });
       });
 
-      window.setWordSelection = function setWordSelection(word) {
-        const host = document.getElementById('wordSelectHost');
-        if (!host || !host.firstElementChild) return;
-        const el = host.firstElementChild;
-
-        if (el.tagName.toLowerCase() === 'select') {
-          const opt = Array.from(el.options).find(o => o.value === word);
-          if (opt) el.value = word;
-        } else if (el.tagName.toLowerCase() === 'input') {
-          el.value = word || '';
-        }
-        window.selectedWord = word || '';
-      }
-
-      const maxRows = 6;
-
-      function addDialectRow(valueDialect = "", valueForm = "") {
-        const wordBody = document.getElementById("wordBody");
-        if (!wordBody) return;
-
-        const base = (window.languages || []).length;
-        const currentCustom = wordBody.querySelectorAll("tr.custom-dialect-row").length;
-        const remaining = Math.max(0, maxRows - base);
-
-        if (currentCustom >= remaining) {
-          alert("最多只能添加6种语言");
-          return;
-        }
-
-        const tr = document.createElement("tr");
-        tr.className = "custom-dialect-row";
-
-        tr.innerHTML = `
-          <td>
-            <input type="text" class="custom-dialect" placeholder="输入语言名称" value="${valueDialect}">
-          </td>
-          <td>
-            <div class="dialect-form-cell">
-              <input type="text" class="syllable-input" placeholder="输入音节" value="${valueForm}">
-              <button type="button" class="remove-language">移除</button>
-            </div>
-          </td>
-        `;
-
-        document.getElementById("wordBody").appendChild(tr);
-        
-        const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
-        const hint = document.getElementById('wordHint');
-        hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
-
-        tr.querySelector(".remove-language").addEventListener("click", () => {
-          tr.remove();
-          const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
-          hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
-        });
-      }
-
       document.getElementById("addColumnBtn")?.addEventListener("click", () => {
         addDialectRow();
       });
-
-      window.collectSyllablesFromPage2 = function collectSyllablesFromPage2() {
-        const displayEl = document.getElementById('currentWordDisplay');
-        const tbody = document.getElementById('wordBody');
-
-        if (!displayEl || !tbody) return null;
-
-        const word = displayEl.textContent.trim();
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        const wordForms = rows.map(row => {
-          const dialectCell = row.children[0];
-          const formCell    = row.children[1];
-
-          const dialect = dialectCell.querySelector('input')
-            ? dialectCell.querySelector('input').value.trim()
-            : dialectCell.textContent.trim();
-
-          const wordFormInput = formCell.querySelector('input');
-          const wordForm = wordFormInput ? wordFormInput.value.trim() : '';
-
-          return { dialect, wordForm };
-        })
-        .filter(x => x.dialect || x.wordForm);
-
-        if (!word && wordForms.length === 0) return null;
-
-        return { wordForms };
-      }
-
-      window.collectComparisonFromPage3 = function collectComparisonFromPage3() {
-        const head = document.getElementById('compareHeadRow');
-        const body = document.getElementById('compareBody');
-        if (!head || !body) return null;
-
-        const ths = Array.from(head.querySelectorAll('th'));
-        const langs = ths.slice(2).map(th => th.textContent.trim());
-
-        const rows = [];
-        Array.from(body.querySelectorAll('tr')).forEach((tr, idx) => {
-          const tds = Array.from(tr.children);
-          const wordEl = tds[0].querySelector('input') || tds[0].querySelector('span');
-          const word = (wordEl?.value ?? wordEl?.textContent ?? '').trim();
-
-          let feature = [];
-          const cbs = tds[1].querySelectorAll('input[type="checkbox"]');
-          if (cbs.length) {
-            feature = Array.from(cbs)
-              .filter(cb => cb.checked)
-              .map(cb => cb.value);
-          } else {
-            feature = [];
-          }
-
-          const forms = {};
-          langs.forEach((lang, i) => {
-            const cell = tds[i + 2];
-            const el = cell.querySelector('input') || cell.querySelector('span');
-            forms[lang] = (el?.value ?? el?.textContent ?? '').trim();
-          });
-
-          rows.push({ word, feature, forms, readonly: idx === 0 });
-        });
-
-        return { rows };
-      }
-
-      window.getSelectedWord = function getSelectedWord() {
-        const host = document.getElementById('wordSelectHost');
-        if (!host) return '';
-        const el = host.firstElementChild;
-        if (!el) return '';
-        if (el.tagName.toLowerCase() === 'select') {
-          return (el.value || '').trim();
-        }
-        if (el.tagName.toLowerCase() === 'input') {
-          return (el.value || '').trim();
-        }
-        return '';
-      }
-
-      window.populateSyllablePage = function populateSyllablePage(word, wordData) {
-        const wordBody = document.getElementById("wordBody");
-        const wordLabel = document.getElementById("currentWordDisplay");
-
-        if (!wordBody || !wordLabel) return;
-
-        wordLabel.textContent = word || "暂无词汇";
-
-        if (wordData === "1") return;
-
-        const savedMap = new Map();
-        if (Array.isArray(wordData?.wordForms)) {
-          wordData.wordForms.forEach(({ dialect, wordForm }) => {
-            if (dialect) savedMap.set(dialect, wordForm || "");
-          });
-        }
-
-        wordBody.innerHTML = "";
-
-        const langs = (window.languages && Array.isArray(window.languages)) ? window.languages : [];
-
-        langs.forEach(lang => {
-          const tr = document.createElement("tr");
-
-          const tdDialect = document.createElement("td");
-          tdDialect.textContent = lang;
-          tdDialect.classList.add("readonly-dialect");
-
-          const tdForm = document.createElement("td");
-          const input = document.createElement("input");
-          input.type = "text";
-          input.className = "syllable-input";
-          input.placeholder = "输入音节";
-          input.dataset.lang = lang;
-          input.value = savedMap.get(lang) ?? "";
-          tdForm.appendChild(input);
-
-          tr.appendChild(tdDialect);
-          tr.appendChild(tdForm);
-          wordBody.appendChild(tr);
-        });
-
-        let remaining = Math.max(0, maxRows - langs.length);
-
-        let customForms = [];
-        if (Array.isArray(wordData?.wordForms)) {
-          customForms = wordData.wordForms.filter(({ dialect }) => !langs.includes(dialect));
-        }
-
-        let trimmed = false;
-        if (customForms.length > remaining) {
-          customForms = customForms.slice(0, remaining);
-          trimmed = true;
-        }
-
-        customForms.forEach(({ dialect, wordForm }) => {
-          const tr = document.createElement("tr");
-          tr.classList.add("custom-dialect-row");
-
-          const tdDialect = document.createElement("td");
-          const inpDia = document.createElement("input");
-          inpDia.type = "text";
-          inpDia.className = "custom-dialect";
-          inpDia.placeholder = "输入语言名称";
-          inpDia.value = dialect || "";
-          tdDialect.appendChild(inpDia);
-
-          const tdForm = document.createElement("td");
-          const wrapper = document.createElement("div");
-          wrapper.className = "dialect-form-cell";
-
-          const inpForm = document.createElement("input");
-          inpForm.type = "text";
-          inpForm.className = "syllable-input";
-          inpForm.placeholder = "输入音节";
-          inpForm.value = wordForm || "";
-
-          const btnRemove = document.createElement("button");
-          btnRemove.type = "button";
-          btnRemove.className = "remove-language";
-          btnRemove.textContent = "移除";
-          btnRemove.addEventListener("click", () => {
-            tr.remove();
-            const hint = document.getElementById('wordHint');
-            const base = (window.languages || []).length;
-            const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
-            hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
-          });
-
-          wrapper.appendChild(inpForm);
-          wrapper.appendChild(btnRemove);
-          tdForm.appendChild(wrapper);
-
-          tr.appendChild(tdDialect);
-          tr.appendChild(tdForm);
-          wordBody.appendChild(tr);
-        });
-
-        if (trimmed && typeof window.editingVocabIndex === "number" && window.editingVocabIndex >= 0 && window.vocabData?.[window.editingVocabIndex]) {
-          const newWordForms = [
-            ...langs.map(lang => ({ dialect: lang, wordForm: savedMap.get(lang) ?? "" })),
-            ...customForms
-          ];
-          const prev = window.vocabData[window.editingVocabIndex];
-          window.vocabData[window.editingVocabIndex] = {
-            ...prev,
-            wordData: { syllable: savedSyllable, wordForms: newWordForms }
-          };
-        }
-
-        const hint = document.getElementById('wordHint');
-        const base = (window.languages || []).length;
-        const total = wordBody.querySelectorAll("tr.custom-dialect-row").length;
-        hint.textContent = `当前语言数：${base + total}；最多可再添加 ${maxRows - total - base} 行`;
-
-        window.dialectRows = document.querySelectorAll("#wordBody tr").length;
-
-        setupMatchSection();
-      };
-
-      window.setupMatchSection = function setupMatchSection() {
-        const fullNote = document.getElementById('fullNote');
-        const relaxedOptions = document.getElementById('relaxedOptions');
-        const relaxedNote = document.getElementById('relaxedNote');
-
-        document.querySelectorAll('input[name="matchType"]').forEach(r => {
-          r.addEventListener('change', () => {
-            const val = document.querySelector('input[name="matchType"]:checked')?.value;
-
-            if (val === 'full') {
-              fullNote.classList.remove('hidden');
-              relaxedOptions.classList.add('hidden');
-              relaxedNote.classList.add('hidden');
-              document.querySelectorAll('input[name="relaxedType"]').forEach(x => x.checked = false);
-            } else if (val === 'partial') {
-              fullNote.classList.add('hidden');
-              relaxedOptions.classList.remove('hidden');
-              relaxedNote.classList.add('hidden');
-            }
-          });
-        });
-
-        document.querySelectorAll('input[name="relaxedType"]').forEach(r => {
-          r.addEventListener('change', () => {
-            const val = document.querySelector('input[name="relaxedType"]:checked')?.value;
-            if (val === 'branchOnly') {
-              relaxedNote.classList.remove('hidden');
-            } else {
-              relaxedNote.classList.add('hidden');
-            }
-          });
-        });
-      };
 
       (function setupLevelAndEtymology() {
         const originChooser = document.getElementById('originChooser');
@@ -1970,33 +2435,6 @@
           });
         });
       })();
-
-      window.populateTimeRange = function populateTimeRange(entry) {
-        const word = getSelectedWord();
-        const wordSpan = document.getElementById('timeWordDisplay');
-        if (wordSpan) {
-          wordSpan.textContent = word || '暂无词汇';
-          wordSpan.style.fontWeight = 'bold';
-        }
-
-        const eventType = entry?.timeInfo?.eventType || '使用';
-        const lower = entry?.timeInfo?.lower ?? 5500;
-        const lowerEra = entry?.timeInfo?.lowerEra || 'BC';
-        const upper = entry?.timeInfo?.upper ?? 4000;
-        const upperEra = entry?.timeInfo?.upperEra || 'BC';
-
-        const selType = document.getElementById('wordEventType');
-        const inpLower = document.getElementById('timeLower');
-        const selLowerEra = document.getElementById('timeLowerEra');
-        const inpUpper = document.getElementById('timeUpper');
-        const selUpperEra = document.getElementById('timeUpperEra');
-
-        if (selType) selType.value = eventType;
-        if (inpLower) inpLower.value = lower;
-        if (selLowerEra) selLowerEra.value = lowerEra;
-        if (inpUpper) inpUpper.value = upper;
-        if (selUpperEra) selUpperEra.value = upperEra;
-      };
 
       const timeModal = document.getElementById('timeModal');
       const timeModalBackdrop = document.getElementById('timeModalBackdrop');
@@ -2138,291 +2576,6 @@
         loadTimeRefsOnce();
       });
 
-      const MAX_COMPARE_ROWS = 4;
-
-      window.buildCompareHead = function buildCompareHead() {
-        const head = document.getElementById('compareHeadRow');
-        head.innerHTML = '';
-
-        const thWord = document.createElement('th'); thWord.textContent = '词汇';
-        const thFeat = document.createElement('th'); thFeat.textContent = '音韵对应';
-        head.appendChild(thWord);
-        head.appendChild(thFeat);
-
-        const dialects = getDialectsFromPage2DOM();
-        dialects.forEach(lang => {
-          const th = document.createElement('th');
-          th.textContent = lang;
-          head.appendChild(th);
-        });
-      };
-
-      window.addCompareRow = function addCompareRow({ word = '', feature = '', forms = {}, readonly = false } = {}) {
-        const tbody = document.getElementById('compareBody');
-        const hint = document.getElementById('compareHint');
-        const currentWords = tbody.querySelectorAll('tr').length;
-        hint.textContent = `当前词汇数：${currentWords}；最多可再添加 ${MAX_COMPARE_ROWS - currentWords} 行`;
-        
-        if (!readonly && currentWords >= MAX_COMPARE_ROWS) {
-          alert('最多只能添加4个词汇');
-          return;
-        }
-
-        const dialects = getDialectsFromPage2DOM();
-
-        const tr = document.createElement('tr');
-
-        const tdWord = document.createElement('td');
-        if (readonly) {
-          const span = document.createElement('span');
-          span.className = 'compare-readonly';
-          span.textContent = word || '';
-          tdWord.appendChild(span);
-        } else {
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.className = 'compare-input';
-          input.placeholder = "参考词汇";
-          input.value = word || '';
-          tdWord.appendChild(input);
-        }
-        tr.appendChild(tdWord);
-
-        const tdFeat = document.createElement('td');
-        if (readonly) {
-          const span = document.createElement('span');
-          span.className = 'compare-readonly';
-          span.textContent = '';
-          tdFeat.appendChild(span);
-        } else {
-          const wrap = document.createElement('div');
-          wrap.className = 'feature-options';
-
-          const normalizeFeature = (f) => {
-            if (Array.isArray(f)) return f;
-            if (typeof f === 'string' && f.trim()) {
-              return f.split(/[，,\s]+/).filter(Boolean);
-            }
-            return [];
-          };
-          const selected = new Set(normalizeFeature(feature));
-
-          ['声母','韵母','声调'].forEach(text => {
-            const label = document.createElement('label');
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.value = text;
-            if (selected.has(text)) cb.checked = true;
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(text));
-            wrap.appendChild(label);
-          });
-
-          tdFeat.appendChild(wrap);
-        }
-        tr.appendChild(tdFeat);
-
-        dialects.forEach(lang => {
-          const td = document.createElement('td');
-          const val = forms?.[lang] ?? '';
-          if (readonly) {
-            const span = document.createElement('span');
-            span.className = 'compare-readonly';
-            span.textContent = val;
-            td.appendChild(span);
-          } else {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'compare-input';
-            input.placeholder = "音节";
-            input.value = val;
-            td.appendChild(input);
-          }
-          tr.appendChild(td);
-        });
-
-        if (!readonly) {
-          const btnRemove = document.createElement('button');
-          btnRemove.type = 'button';
-          btnRemove.className = 'delete-button';
-          btnRemove.textContent = '移除';
-          btnRemove.style.marginTop = '6px';
-          tr.children[0].appendChild(btnRemove);
-          btnRemove.addEventListener('click', () => {
-            tr.remove();
-            const total = tbody.querySelectorAll('tr').length;
-            hint.textContent = `当前词汇数：${total}；最多可再添加 ${MAX_COMPARE_ROWS - total} 行`;
-          });
-        }
-
-        document.getElementById('compareBody').appendChild(tr);
-
-        const total = tbody.querySelectorAll('tr').length;
-        hint.textContent = `当前词汇数：${total}；最多可再添加 ${MAX_COMPARE_ROWS - total} 行`;
-      }
-
-      window.getDialectsFromPage2DOM = function getDialectsFromPage2DOM() {
-        const tbody = document.getElementById('wordBody');
-        if (!tbody) return [];
-
-        const dialects = [];
-
-        tbody.querySelectorAll('tr:not(.custom-dialect-row)').forEach(tr => {
-          const t0 = tr.children?.[0];
-          const name = t0 ? t0.textContent.trim() : '';
-          if (name) dialects.push(name);
-        });
-
-        tbody.querySelectorAll('tr.custom-dialect-row').forEach(tr => {
-          const inp = tr.querySelector('td:first-child input.custom-dialect');
-          const name = inp ? inp.value.trim() : '';
-          if (name) dialects.push(name);
-        });
-
-        return Array.from(new Set(dialects));
-      }
-
-      window.populateComparisonPage = function populateComparisonPage(word, wordData, compData) {
-        buildCompareHead();
-        const dialects = getDialectsFromPage2DOM();
-
-        const map = new Map();
-        if (Array.isArray(wordData?.wordForms)) {
-          wordData.wordForms.forEach(({ dialect, wordForm }) => {
-            if (dialect) map.set(dialect, wordForm || '');
-          });
-        }
-
-        const tbody = document.getElementById('compareBody');
-        tbody.innerHTML = '';
-
-        const formsObj = {};
-        dialects.forEach(lang => { formsObj[lang] = map.get(lang) ?? ''; });
-
-        addCompareRow({
-          word: word || '',
-          feature: '',
-          forms: formsObj,
-          readonly: true
-        });
-
-        if (Array.isArray(compData?.rows) && compData.rows.length > 1) {
-          compData.rows.slice(1).forEach(row => {
-            const adaptedForms = {};
-            dialects.forEach(lang => {
-              adaptedForms[lang] = row.forms?.[lang] ?? '';
-            });
-            addCompareRow({
-              word: row.word || '',
-              feature: row.feature || '',
-              forms: adaptedForms,
-              readonly: false
-            });
-          });
-        }
-
-        const hint = document.getElementById('compareHint');
-        const total = tbody.querySelectorAll('tr').length;
-        hint.textContent = `当前词汇数：${total}；最多可再添加 ${MAX_COMPARE_ROWS - total} 行`;
-      };
-
-      window.populateBorrowPage = function populateBorrowPage(entry) {
-        const box1 = document.getElementById('borrowSourceGroup');
-        const box2 = document.getElementById('borrowChangeGroup');
-        type = document.querySelector('input[name="originType"]:checked')?.value;
-        if (!type) {
-          const ex = document.querySelector('input[name="explainable"]:checked')?.value; // yes/no
-          const cg = document.querySelector('input[name="cognate"]:checked')?.value;     // yes/no
-          if (ex && cg && ex !== cg) {
-            type = (ex === 'yes' && cg === 'no') ? '借词' : '固有词';
-          }
-        }
-
-        if (!box1 || !box2) return;
-
-        if (type !== '借词') {
-          box1.classList.add('hidden');
-          box2.classList.add('hidden');
-          return;
-        }
-        box1.classList.remove('hidden');
-        box2.classList.remove('hidden');
-
-        document.querySelectorAll('input[name="borrowSource"]').forEach(x => x.checked = false);
-        document.querySelectorAll('input[name="borrowChange"]').forEach(x => x.checked = false);
-
-        const srcOther = document.getElementById('borrowSourceOther');
-        if (entry.borrowSource) {
-          const r = document.querySelector(`input[name="borrowSource"][value="${entry.borrowSource}"]`);
-          if (r) {
-            r.checked = true;
-            r.dispatchEvent(new Event('change'));
-          }
-        }
-        if (entry.borrowSource === '其他' && srcOther) {
-          srcOther.value = entry.borrowSourceOther || '';
-          srcOther.disabled = false;
-        }
-
-        const changeOther = document.getElementById('borrowChangeOther');
-        if (entry.borrowChange) {
-          const r = document.querySelector(`input[name="borrowChange"][value="${entry.borrowChange}"]`);
-          if (r) {
-            r.checked = true;
-            r.dispatchEvent(new Event('change'));
-          }
-        }
-        if (entry.borrowChange === '其他' && changeOther) {
-          changeOther.value = entry.borrowChangeOther || '';
-          changeOther.disabled = false;
-        }
-      };
-
-      window.collectBorrowFromLastPage = function collectBorrowFromLastPage() {
-        const showSource = !document.getElementById('borrowSourceGroup')?.classList.contains('hidden');
-        const showChange = !document.getElementById('borrowChangeGroup')?.classList.contains('hidden');
-
-        if (!showSource && !showChange) {
-          return {
-            borrowSource: null,
-            borrowSourceOther: null,
-            borrowChange: null,
-            borrowChangeOther: null
-          };
-        }
-
-        const src = document.querySelector('input[name="borrowSource"]:checked')?.value || null;
-        const srcOtherVal = document.getElementById('borrowSourceOther')?.value?.trim() || null;
-
-        const chg = document.querySelector('input[name="borrowChange"]:checked')?.value || null;
-        const chgOtherVal = document.getElementById('borrowChangeOther')?.value?.trim() || null;
-
-        return {
-          borrowSource: src,
-          borrowSourceOther: (src === '其他' ? (srcOtherVal || null) : null),
-          borrowChange: chg,
-          borrowChangeOther: (chg === '其他' ? (chgOtherVal || null) : null)
-        };
-      }
-
-      window.collectTimeFromLastPage = function collectTimeFromLastPage() {
-        const eventType = document.getElementById('wordEventType')?.value || '使用';
-        const lower = document.getElementById('timeLower')?.value;
-        const lowerEra = document.getElementById('timeLowerEra')?.value || 'BC';
-        const upper = document.getElementById('timeUpper')?.value;
-        const upperEra = document.getElementById('timeUpperEra')?.value || 'BC';
-
-        const toNum = v => (v === '' || v == null) ? null : Number(v);
-
-        return {
-          eventType,
-          lower: toNum(lower),
-          lowerEra,
-          upper: toNum(upper),
-          upperEra
-        };
-      }
-
       function resetVocabWizardState() {
         document.querySelectorAll('input[name="category"]').forEach(r => r.checked = false);
         const sel = document.getElementById('wordSelect');
@@ -2467,128 +2620,6 @@
         document.getElementById('timeLowerEra') && (document.getElementById('timeLowerEra').value = 'BC');
         document.getElementById('timeUpper') && (document.getElementById('timeUpper').value = '4000');
         document.getElementById('timeUpperEra') && (document.getElementById('timeUpperEra').value = 'BC');
-      }
-
-      window.generateCompareCSVFromEntry = function generateCompareCSVFromEntry(entry) {
-        const rows = Array.isArray(entry?.compData) ? entry.compData : [];
-        if (!rows.length) return "词汇,音韵对应\n";
-
-        const langOrder = [];
-        rows.forEach(r => {
-          const forms = r?.forms || {};
-          Object.keys(forms).forEach(k => { if (!langOrder.includes(k)) langOrder.push(k); });
-        });
-
-        const header = ["词汇", "音韵对应", ...langOrder];
-
-        const lines = [header.join(",")];
-        rows.forEach(r => {
-          const word = (r?.word ?? "").toString();
-          const feature = Array.isArray(r?.feature) ? r.feature.join("、") : (r?.feature ?? "");
-          const forms = r?.forms || {};
-          const cols = [word, feature, ...langOrder.map(lang => (forms[lang] ?? ""))];
-
-          const esc = (s) => {
-            const str = (s == null) ? "" : String(s);
-            return /[",\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
-          };
-
-          lines.push(cols.map(esc).join(","));
-        });
-
-        return lines.join("\n");
-      }
-
-      window.textToCsvDataUrl = function textToCsvDataUrl(text) {
-        return "data:text/csv;charset=utf-8," + encodeURIComponent(text || "");
-      }
-
-      window.downloadCSV = function downloadCSV(filename, rows) {
-        if (!Array.isArray(rows) || rows.length === 0) return;
-        const csv = rows.map(r =>
-          r.map(cell => {
-            const s = (cell ?? '').toString();
-            if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-            return s;
-          }).join(',')
-        ).join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
-
-      window.buildVocabListCSV = function buildVocabListCSV(data) {
-        const header = [
-          '词项','历史层次','完全普遍对应','不完全普遍对应','放宽的完全普遍对应',
-          '时间信息','证据词汇','录入时间'
-        ];
-        const lines = [header];
-
-        (data || []).forEach(item => {
-          const full = item?.match?.type === 'full' || item?.fullMatch === true ? '是' : '否';
-          const partial = item?.match?.type === 'partial' || item?.partialMatch === true ? '是' : '否';
-
-          let relaxed = '否';
-          if (item?.relaxedMatch === true || item?.match?.relaxedType) relaxed = '是';
-
-          const t = item?.timeInfo;
-          const timeText = t
-            ? `${(t.lower ?? '')} ${(t.lowerEra ?? '')} — ${(t.upper ?? '')} ${(t.upperEra ?? '')}`.trim()
-            : '--';
-
-          const evidenceText = item?.evidence ? item.evidence : '--';
-
-          lines.push([
-            item?.word ?? '--',
-            item?.level ?? '--',
-            full,
-            partial,
-            relaxed,
-            timeText || '--',
-            evidenceText,
-            item?.recordedAt ?? '--'
-          ]);
-        });
-
-        return lines;
-      }
-
-      window.buildAllVocabsEvidenceCSV = function buildAllVocabsEvidenceCSV(data, projectLangs = []) {
-        const out = [];
-
-        (data || []).forEach((v, idx) => {
-          const word = v?.word ?? `词${idx+1}`;
-          const langs = Array.isArray(projectLangs) ? projectLangs : [];
-
-          const header = ['词汇','音韵对应', ...langs];
-          out.push(header);
-
-          const rows = v?.compData?.rows || [];
-          rows.forEach((r, rIdx) => {
-            const featText = Array.isArray(r?.feature) ? r.feature.join(';') : (r?.feature || '');
-            const line = [
-              rIdx === 0 ? (r?.word || word) : (r?.word || ''),
-              featText
-            ];
-
-            langs.forEach(L => {
-              line.push( (r?.forms?.[L] ?? '') );
-            });
-
-            out.push(line);
-          });
-
-          out.push(['']);
-        });
-
-        return out;
       }
 
       document.getElementById('exportVocabTableBtn')?.addEventListener('click', () => {
@@ -2678,7 +2709,9 @@
 
         if (pageEl && pageEl.querySelector('#projectTimeSection')) {
           const suggest = computeSuggestedProjectTime(vocabData);
-          prefillProjectTimeIfEmpty(suggest);
+          if (suggest) {
+              applyNormalizedProjectTime(suggest);
+          }
         }
         return;
       } else {
@@ -2745,17 +2778,24 @@
       const references = document.getElementById("references").value.trim();
       const projectType = document.querySelector('input[name="projectType"]:checked')?.value || null;
 
-      const projectTimeUpper = (document.getElementById('projectTimeUpper')?.value || '').trim();
-      const projectTimeUpperEra = document.getElementById('projectTimeUpperEra')?.value || 'BC';
-      const projectTimeLower = (document.getElementById('projectTimeLower')?.value || '').trim();
-      const projectTimeLowerEra = document.getElementById('projectTimeLowerEra')?.value || 'BC';
+      const vocabListForTime = Array.isArray(window.vocabData) ? window.vocabData : [];
+      let computed = computeSuggestedProjectTime(vocabListForTime);
 
-      const projectTimeRange = {
-        upper: projectTimeUpper ? Number(projectTimeUpper) : '',
-        upperEra: projectTimeUpperEra,
-        lower: projectTimeLower ? Number(projectTimeLower) : '',
-        lowerEra: projectTimeLowerEra
-      };
+      if (!computed) {
+        computed = normalizeTimeRange({
+          upper: document.getElementById('projectTimeUpper')?.value || '',
+          upperEra: document.getElementById('projectTimeUpperEra')?.value || 'BC',
+          lower: document.getElementById('projectTimeLower')?.value || '',
+          lowerEra: document.getElementById('projectTimeLowerEra')?.value || 'AD'
+        });
+      }
+
+      const projectTimeRange = computed ? {
+        upper: computed.upper,
+        upperEra: computed.upperEra,
+        lower: computed.lower,
+        lowerEra: computed.lowerEra
+      } : { upper: '', upperEra: 'BC', lower: '', lowerEra: 'AD' };
 
       let treeFileForSave = null;
 
@@ -2771,6 +2811,8 @@
         }
       }
 
+      const isPublic = existing?.isPublic;
+
       function finalizeSave() {
         const draft = {
           id: currentId,
@@ -2784,6 +2826,17 @@
           treeFile: treeFileForSave,
           vocabList: vocabData,
           projectTimeRange,
+          authorId: existing?.authorId
+                    || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.id)
+                    || (JSON.parse(sessionStorage.getItem("currentUser") || "null")?.id)
+                    || sessionStorage.getItem("pendingAuthorId")
+                    || "anonymous",
+          author:  existing?.author
+                    || (typeof Auth !== "undefined" && Auth.getCurrentUser && Auth.getCurrentUser()?.username)
+                    || (JSON.parse(sessionStorage.getItem("currentUser") || "null")?.username)
+                    || sessionStorage.getItem("pendingAuthorName")
+                    || "未知用户",
+          isPublic,
         };
 
         const index = drafts.findIndex(p => p.id === currentId);
@@ -2795,6 +2848,9 @@
 
         localStorage.setItem("projectDrafts", JSON.stringify(drafts));
         if (currentPage <= 1) alert("草稿已保存！");
+
+        sessionStorage.removeItem("pendingAuthorId");
+        sessionStorage.removeItem("pendingAuthorName");
       }
 
       finalizeSave();
@@ -2957,8 +3013,6 @@
 
     window.saveVocab = function saveVocab() {
       const loggedUser = JSON.parse(sessionStorage.getItem("loggedUser") || "{}");
-      const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-      const authorName = (cu && cu.username) || sessionStorage.getItem("username") || "未知用户";
       const category = document.querySelector('input[name="category"]:checked')?.value;
       const word = getSelectedWord();
 
@@ -3037,8 +3091,7 @@
           upperEra: timePack.upperEra
         } ?? prev?.timeInfo ?? null),
         evidence : evidenceCsvDataUrl,
-        recordedAt: prev?.recordedAt ?? new Date().toLocaleString(),
-        author: prev?.author ?? authorName
+        recordedAt: prev?.recordedAt ?? new Date().toLocaleString()
       };
 
       if (editingVocabIndex !== null) {

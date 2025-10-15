@@ -1,44 +1,42 @@
-document.addEventListener("click", (e) => {
-    if (e.target.id === "switchToRegister") {
-        // document.getElementById("switchHint").textContent = "已有账号？";
-        document.getElementById("authTitle").textContent = "注册";
-    }
-    if (e.target.id === "switchToLogin") {
-        // document.getElementById("switchHint").textContent = "没有账号？";
-        document.getElementById("authTitle").textContent = "登录";
-    }
-    if (e.target.id === "loginBtn") {
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value.trim();
-        const user = users.find(u => u.email === email && u.password === password);
-        if (user) {
-            sessionStorage.setItem("currentUser", JSON.stringify(user));
-            sessionStorage.setItem("isLoggedIn", "true");
-            sessionStorage.setItem("username", user.username);
-            closeAuthModal();
-            if (window.Auth?.init) Auth.init();
-        } else {
-            document.getElementById("loginError").textContent = "邮箱或密码错误";
-        }
-    }
-    if (e.target.id === "registerBtn") {
-        const email = document.getElementById("registerEmail").value.trim();
-        const username = document.getElementById("registerUsername").value.trim();
-        const password = document.getElementById("registerPassword").value.trim();
-        if (!email || !username || !password) {
-            document.getElementById("registerError").textContent = "请填写所有字段";
-            return;
-        }
-        if (users.some(u => u.email === email)) {
-            document.getElementById("registerError").textContent = "该邮箱已被注册";
-            return;
-        }
-        users.push({ email, username, password });
-        sessionStorage.setItem("users", JSON.stringify(users));
-        alert("注册成功，请登录");
-        document.getElementById("switchToLogin").click();
-    }
-});
+// document.addEventListener("click", (e) => {
+//     if (e.target.id === "switchToRegister") {
+//         document.getElementById("authTitle").textContent = "注册";
+//     }
+//     if (e.target.id === "switchToLogin") {
+//         document.getElementById("authTitle").textContent = "登录";
+//     }
+//     if (e.target.id === "loginBtn") {
+//         const email = document.getElementById("loginEmail").value.trim();
+//         const password = document.getElementById("loginPassword").value.trim();
+//         const user = users.find(u => u.email === email && u.password === password);
+//         if (user) {
+//             sessionStorage.setItem("currentUser", JSON.stringify(user));
+//             sessionStorage.setItem("isLoggedIn", "true");
+//             sessionStorage.setItem("username", user.username);
+//             closeAuthModal();
+//             if (window.Auth?.init) Auth.init();
+//         } else {
+//             document.getElementById("loginError").textContent = "邮箱或密码错误";
+//         }
+//     }
+//     if (e.target.id === "registerBtn") {
+//         const email = document.getElementById("registerEmail").value.trim();
+//         const username = document.getElementById("registerUsername").value.trim();
+//         const password = document.getElementById("registerPassword").value.trim();
+//         if (!email || !username || !password) {
+//             document.getElementById("registerError").textContent = "请填写所有字段";
+//             return;
+//         }
+//         if (users.some(u => u.email === email)) {
+//             document.getElementById("registerError").textContent = "该邮箱已被注册";
+//             return;
+//         }
+//         users.push({ email, username, password });
+//         sessionStorage.setItem("users", JSON.stringify(users));
+//         alert("注册成功，请登录");
+//         document.getElementById("switchToLogin").click();
+//     }
+// });
 
 function openAuthModal() {
     const m = document.getElementById('authModal');
@@ -231,14 +229,21 @@ function closeAuthModal() {
             const error = document.getElementById("loginError");
         
             const users = JSON.parse(sessionStorage.getItem("users") || "{}");
-            if (!users[email] || users[email].password !== password) {
+            const rec = users[email];
+            if (!rec || rec.password !== password) {
                 error.textContent = "邮箱或密码错误";
                 return;
             }
+
+            if (!rec.id) {
+                rec.id = (crypto.randomUUID && crypto.randomUUID()) || ("u_" + Date.now());
+                users[email] = rec;
+                sessionStorage.setItem("users", JSON.stringify(users));
+            }
         
-            sessionStorage.setItem("currentUser", JSON.stringify(users[email]));
+            sessionStorage.setItem("currentUser", JSON.stringify(rec));
             sessionStorage.setItem("isLoggedIn", "true");
-            sessionStorage.setItem("username", users[email].username);
+            sessionStorage.setItem("username", rec.username);
             closeAuthModal();
             this.bindProfileName('#userStatus');
         },
@@ -259,10 +264,11 @@ function closeAuthModal() {
                 error.textContent = "该邮箱已注册";
                 return;
             }
-        
-            users[email] = { email, username, password };
+
+            const userId = (crypto.randomUUID && crypto.randomUUID()) || ("u_" + Date.now());
+
+            users[email] = { id: userId, email, username, password };
             sessionStorage.setItem("users", JSON.stringify(users));
-        
             sessionStorage.setItem("currentUser", JSON.stringify(users[email]));
             sessionStorage.setItem("isLoggedIn", "true");
             sessionStorage.setItem("username", username);

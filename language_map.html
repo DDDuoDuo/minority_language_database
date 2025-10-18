@@ -302,7 +302,7 @@
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
-        <a href="#">我的账户</a>
+        <a href="account.html">我的账户</a>
         <a href="projects.html">管理项目</a>
         <button class="dropdown-link" id="logoutBtn">退出登录</button>
     </div>
@@ -638,7 +638,7 @@
     function highlightProject(projectId) {
       document.querySelectorAll('.project-line').forEach(line => {
         if (line.dataset.projectId === projectId) {
-          line.style.boxShadow = '0 0 10px 2px #ff6600';
+          line.style.boxShadow = `0 0 10px 2px ${getColor(line.dataset.projectID)}`;
           line.style.transform = 'scaleY(2)';
           line.style.zIndex = 20;
         } else {

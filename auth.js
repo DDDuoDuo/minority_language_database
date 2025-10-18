@@ -1,43 +1,3 @@
-// document.addEventListener("click", (e) => {
-//     if (e.target.id === "switchToRegister") {
-//         document.getElementById("authTitle").textContent = "注册";
-//     }
-//     if (e.target.id === "switchToLogin") {
-//         document.getElementById("authTitle").textContent = "登录";
-//     }
-//     if (e.target.id === "loginBtn") {
-//         const email = document.getElementById("loginEmail").value.trim();
-//         const password = document.getElementById("loginPassword").value.trim();
-//         const user = users.find(u => u.email === email && u.password === password);
-//         if (user) {
-//             sessionStorage.setItem("currentUser", JSON.stringify(user));
-//             sessionStorage.setItem("isLoggedIn", "true");
-//             sessionStorage.setItem("username", user.username);
-//             closeAuthModal();
-//             if (window.Auth?.init) Auth.init();
-//         } else {
-//             document.getElementById("loginError").textContent = "邮箱或密码错误";
-//         }
-//     }
-//     if (e.target.id === "registerBtn") {
-//         const email = document.getElementById("registerEmail").value.trim();
-//         const username = document.getElementById("registerUsername").value.trim();
-//         const password = document.getElementById("registerPassword").value.trim();
-//         if (!email || !username || !password) {
-//             document.getElementById("registerError").textContent = "请填写所有字段";
-//             return;
-//         }
-//         if (users.some(u => u.email === email)) {
-//             document.getElementById("registerError").textContent = "该邮箱已被注册";
-//             return;
-//         }
-//         users.push({ email, username, password });
-//         sessionStorage.setItem("users", JSON.stringify(users));
-//         alert("注册成功，请登录");
-//         document.getElementById("switchToLogin").click();
-//     }
-// });
-
 function openAuthModal() {
     const m = document.getElementById('authModal');
     if (m) m.classList.remove('hidden');
@@ -116,7 +76,16 @@ function closeAuthModal() {
           
                   <div id="registerForm" class="auth-form hidden">
                     <input type="email" id="registerEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
-                    <input type="text" id="registerUsername" class="auth-input" placeholder="用户名" autocomplete="username">
+                    <div class="username-with-title">
+                        <input type="text" id="registerUsername" class="auth-input" placeholder="姓名/用户名" autocomplete="username">
+                        <select id="registerTitle">
+                            <option value="教授" selected>教授</option>
+                            <option value="博士">博士</option>
+                            <option value="先生">先生</option>
+                            <option value="女士">女士</option>
+                        </select>
+                    </div>
+                    <input type="text" id="registerWorkplace" class="auth-input" placeholder="工作单位（选填）">
                     <input type="password" id="registerPassword" class="auth-input" placeholder="密码" autocomplete="new-password">
                     <p id="registerError" class="error-msg"></p>
                     <button id="authSubmitRegister" class="auth-box-button">注册</button>
@@ -219,6 +188,10 @@ function closeAuthModal() {
             if (userEL) userEL.value = "";
             const passEL = document.getElementById("registerPassword");
             if (passEL) passEL.value = "";
+            const workEL = document.getElementById("registerWorkplace");
+            if (workEL) workEL.value = "";
+            const titleEL = document.getElementById("registerTitle");
+            if (titleEL) titleEL.value = "教授";
           
             openAuthModal();
         },          
@@ -230,13 +203,23 @@ function closeAuthModal() {
         
             const users = JSON.parse(sessionStorage.getItem("users") || "{}");
             const rec = users[email];
+
             if (!rec || rec.password !== password) {
                 error.textContent = "邮箱或密码错误";
                 return;
             }
-
             if (!rec.id) {
                 rec.id = (crypto.randomUUID && crypto.randomUUID()) || ("u_" + Date.now());
+                users[email] = rec;
+                sessionStorage.setItem("users", JSON.stringify(users));
+            }
+            if (!rec.title) {
+                rec.title = "教授";
+                users[email] = rec;
+                sessionStorage.setItem("users", JSON.stringify(users));
+            }
+            if (!rec.workplace) {
+                rec.workplace = "";
                 users[email] = rec;
                 sessionStorage.setItem("users", JSON.stringify(users));
             }
@@ -251,6 +234,8 @@ function closeAuthModal() {
         register() {
             const email = document.getElementById("registerEmail").value.trim();
             const username = document.getElementById("registerUsername").value.trim();
+            const title = document.getElementById("registerTitle").value;
+            const workplace = document.getElementById("registerWorkplace").value.trim();
             const password = document.getElementById("registerPassword").value.trim();
             const error = document.getElementById("registerError");
         
@@ -267,7 +252,7 @@ function closeAuthModal() {
 
             const userId = (crypto.randomUUID && crypto.randomUUID()) || ("u_" + Date.now());
 
-            users[email] = { id: userId, email, username, password };
+            users[email] = { id: userId, email, username, password, title, workplace };
             sessionStorage.setItem("users", JSON.stringify(users));
             sessionStorage.setItem("currentUser", JSON.stringify(users[email]));
             sessionStorage.setItem("isLoggedIn", "true");

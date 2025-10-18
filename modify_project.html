@@ -62,54 +62,62 @@
     .profile {
       display: flex;
       align-items: center;
+      margin-right: 75px;
+      gap: 16px;
+      cursor: pointer;
     }
     
     .profile img {
       height: 40px;
       border-radius: 50%;
-      margin-right: 120px;
       cursor: pointer;
     }
 
+    .profile-name {
+      color: gray;
+      font-size: 16px;
+      user-select: none;
+    }
+
     .dropdown-menu {
-        position: absolute;
-        top: 70px;
-        right: 190px;
-        background-color: white;
-        border: 1px solid #ccc;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 5px;
-        width: 140px;
-        z-index: 9999;
-        overflow: hidden;
+      position: absolute;
+      top: 70px;
+      right: 190px;
+      background-color: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      width: 140px;
+      z-index: 9999;
+      overflow: hidden;
     }
 
     .dropdown-menu a {
-        display: block;
-        padding: 10px 16px;
-        text-decoration: none;
-        color: #333;
-        font-size: 14px;
+      display: block;
+      padding: 10px 16px;
+      text-decoration: none;
+      color: #333;
+      font-size: 14px;
     }
 
     .dropdown-menu a:hover {
-        background-color: #f0f0f0;
+      background-color: #f0f0f0;
     }
 
     .dropdown-menu button.dropdown-link {
-        display: block;
-        width: 100%;
-        padding: 10px 16px;
-        border: none;
-        background: none;
-        text-align: left;
-        font-size: 14px;
-        color: #333;
-        cursor: pointer;
+      display: block;
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
     }
 
     .dropdown-menu button.dropdown-link:hover {
-        background-color: #f0f0f0;
+      background-color: #f0f0f0;
     }
 
     .page {
@@ -275,6 +283,10 @@
       cursor: pointer;
     }
 
+    .nav-button:hover {
+      background: #1a5edb;
+    }
+
     .nav-button:disabled {
       background-color: #aaa;
       cursor: not-allowed;
@@ -322,6 +334,10 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+    }
+
+    .new-vocab-button:hover {
+      background: #1a5edb;
     }
 
     .vocab-table-wrapper {
@@ -653,12 +669,13 @@
 
     <div style="width: 226px;"></div>
 
-    <div class="profile">
+    <div class="profile" id="profile">
       <img id="profileImg" src="img/profile.png" alt="头像">
+      <span class="profile-name" id="userStatus">登录</span>
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
-      <a href="#">我的账户</a>
+      <a href="account.html">我的账户</a>
       <a href="projects.html">管理项目</a>
       <button class="dropdown-link" id="logoutBtn">退出登录</button>
     </div>
@@ -777,6 +794,7 @@
 
             <div id="noVocabs">暂无词汇</div>
           </div>
+          <div class="hint-text">*当“放宽的完全普遍对应”显示为“Y”时，可能可以认为也属于“完全普遍对应”，即目标语言没有分化</div>
         </div>
 
         <div class="form-group time-range-section" id="projectTimeSection">
@@ -794,6 +812,8 @@
               <span id="projectTimeLowerEra" class="era-label"></span>
             </span>
           </div>
+
+          <div class="hint-text">*时间范围由系统自动确定，上限取最近的上限时间，下限取最早的下限时间</div>
         </div>
 
         <div class="pagination-container">
@@ -1193,9 +1213,6 @@
     let editingVocabIndex = null;
 
     let originalDraft = null;
-
-    Auth.init('#userStatus');
-    Auth.bindProfileName('#userStatus');
 
     function updateRemoveButtons() {
       const removeBtns = document.querySelectorAll(".remove-language");
@@ -2132,6 +2149,10 @@
         window.location.href = "index.html?login=true";
         return;
       }
+
+      Auth.init('#userStatus');
+      Auth.bindProfileName('#userStatus');
+
       const currentUser = Auth.getCurrentUser();
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -2624,7 +2645,7 @@
 
       document.getElementById('exportVocabTableBtn')?.addEventListener('click', () => {
         const rows = buildVocabListCSV(vocabData);
-        downloadCSV('词汇列表.csv', rows);
+        downloadCSV('分化信息.csv', rows);
       });
 
       document.getElementById('exportAllVocabsBtn')?.addEventListener('click', () => {

@@ -162,6 +162,10 @@
       cursor: pointer;
     }
 
+    .new-project-button:hover {
+      background: #1a5edb;
+    }
+
     .project-table-wrapper {
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -240,7 +244,7 @@
       <nav>
         <ul>
           <li><a href="index.html">首页</a></li>
-          <li><a href="language_map.html" class="active">研究</a></li>
+          <li><a href="language_map.html">研究</a></li>
           <li><a href="contribute.html">贡献者</a></li>
         </ul>
       </nav>
@@ -252,7 +256,7 @@
     </div>
 
     <div id="dropdownMenu" class="dropdown-menu" style="display: none;">
-      <a href="#">我的账户</a>
+      <a href="account.html">我的账户</a>
       <a href="projects.html">管理项目</a>
       <button class="dropdown-link" id="logoutBtn">退出登录</button>
     </div>
@@ -316,7 +320,8 @@
     const userNameSpan = document.getElementById("profile-name");
     const cu = JSON.parse(sessionStorage.getItem("currentUser") || "null");
     const userName = (cu && cu.username) || sessionStorage.getItem("username") || "未知用户";
-    if (userNameSpan) userNameSpan.textContent = userName;
+    const title = (cu && cu.title) || "";
+    if (userNameSpan) userNameSpan.textContent = userName + title;
 
     const profile = document.getElementById("profile");
     const dropdown = document.getElementById("dropdownMenu");

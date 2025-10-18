@@ -27,6 +27,24 @@
     border: 1px solid #ccc;
     border-radius: 5px;
 }
+
+.username-with-title {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.username-with-title input.auth-input {
+    flex: 1;
+}
+
+.username-with-title select {
+    height: 37.5px;
+    padding: 0 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+}
   
 .auth-box-button {
     width: 100%;
